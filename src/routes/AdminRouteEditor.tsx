@@ -277,7 +277,7 @@ export default function AdminRouteEditor() {
       map.remove();
       mapRef.current = null;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Sync route line to map ─────────────────────────────────────────────────
   useEffect(() => {
