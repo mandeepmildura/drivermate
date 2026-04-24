@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { loadActiveRoutes } from '../lib/routes';
 import { useShiftSetup } from '../state/ShiftSetupProvider';
 import { useSession } from '../state/SessionProvider';
@@ -39,13 +39,20 @@ export default function RoutePicker() {
           <h1 className="text-3xl font-black">Today&rsquo;s routes</h1>
           {driver && <p className="text-slate-400">{driver.full_name}</p>}
         </div>
-        <button
-          type="button"
-          onClick={() => signOutDriver()}
-          className="text-sm text-slate-400 underline-offset-4 hover:underline"
-        >
-          Sign out
-        </button>
+        <div className="flex items-center gap-3">
+          {driver?.is_admin && (
+            <Link to="/admin" className="text-sm text-blue-400 underline-offset-4 hover:underline">
+              Admin
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => signOutDriver()}
+            className="text-sm text-slate-400 underline-offset-4 hover:underline"
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
       {source === 'cache' && (
