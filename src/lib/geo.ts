@@ -4,6 +4,8 @@ export interface GeoPosition {
   lat: number;
   lng: number;
   accuracy: number;
+  heading: number | null;
+  speed: number | null;
   timestamp: number;
 }
 
@@ -52,6 +54,8 @@ export function useGeolocation(enabled: boolean): GeoStatus {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
             accuracy: pos.coords.accuracy,
+            heading: pos.coords.heading,
+            speed: pos.coords.speed,
             timestamp: pos.timestamp,
           },
         });

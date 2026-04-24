@@ -17,7 +17,7 @@ export async function loadActiveRoutes(): Promise<CachedFetchResult<RouteRow>> {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from('routes')
-      .select('id, route_number, display_number, description, active, locked, version, updated_at')
+      .select('id, route_number, display_number, description, active, locked, version, updated_at, path_geojson')
       .eq('active', true)
       .order('route_number');
     if (error) throw error;

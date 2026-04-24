@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(gh auth *)",
+      "mcp__claude_ai_Cloudflare_Developer_Platform__accounts_list",
+      "Bash(gh repo *)",
+      "Bash(npx wrangler@3 whoami)",
+      "mcp__claude_ai_Supabase__get_project_url",
+      "mcp__claude_ai_Supabase__get_publishable_keys",
+      "mcp__claude_ai_Gmail__create_draft",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

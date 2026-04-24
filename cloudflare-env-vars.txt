@@ -1,0 +1,19 @@
+Cloudflare Pages — Environment Variables
+=========================================
+
+Variable name:
+VITE_SUPABASE_URL
+
+Value:
+https://lecssjvuskqemjzvjimo.supabase.co
+
+
+Variable name:
+VITE_SUPABASE_ANON_KEY
+
+Value:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlY3NzanZ1c2txZW1qenZqaW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MTg4NjgsImV4cCI6MjA4ODA5NDg2OH0.Djl2cEDwf2AHca5SSN9HVQMyx7a1ZyY3MOMLTz5OtsY
+
+
+=========================================
+Delete this file after pasting into Cloudflare.

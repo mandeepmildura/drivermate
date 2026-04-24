@@ -7,6 +7,7 @@ export interface RouteDraft {
   description: string | null;
   active: boolean;
   locked: boolean;
+  path_geojson: object | null;
 }
 
 export interface StopDraft {
@@ -40,7 +41,7 @@ export async function getRouteWithStops(
   const [routeRes, stopsRes] = await Promise.all([
     supabase
       .from('routes')
-      .select('id, route_number, display_number, description, active, locked, version, updated_at')
+      .select('id, route_number, display_number, description, active, locked, version, updated_at, path_geojson')
       .eq('id', routeId)
       .single(),
     supabase.from('route_stops').select('*').eq('route_id', routeId).order('sequence'),

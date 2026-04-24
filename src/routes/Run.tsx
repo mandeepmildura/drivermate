@@ -23,14 +23,13 @@ import {
 import { useOnlineStatus } from '../lib/useOnlineStatus';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
-import { navigateUrlForRemainingStops, navigateUrlForStop } from '../lib/maps';
 import { haversineMetres, useGeolocation } from '../lib/geo';
+import { distanceAlongRouteToIndex, directionFromInstruction } from '../lib/turfUtils';
+import RouteMap from '../components/RouteMap';
 
-const SPEAK_LOOKAHEAD_MS = 30_000;
+const AUDIO_TRIGGER_M = 150;
 const APPROACHING_DISTANCE_M = 200;
 const ARRIVED_DISTANCE_M = 50;
-// Stops: bus actually parks; require 8s dwell to avoid false triggers.
-// Turns: bus only drives through; advance on first GPS hit inside the geofence.
 const ARRIVAL_DWELL_MS_STOP = 8_000;
 const ARRIVAL_DWELL_MS_TURN = 0;
 const GEO_PREF_KEY = 'drivermate.gpsAutoAdvance';
@@ -46,13 +45,6 @@ function useNow(intervalMs = 1000): Date {
 
 function newId(): string {
   return crypto.randomUUID();
-}
-
-function scheduledTimeToday(scheduled: string, today: Date): Date {
-  const [h, m] = scheduled.split(':').map(Number);
-  const target = new Date(today);
-  target.setHours(h, m, 0, 0);
-  return target;
 }
 
 function readGpsPref(): boolean {
@@ -83,9 +75,14 @@ export default function Run() {
   const [gpsEnabled, setGpsEnabled] = useState(readGpsPref());
   const online = useOnlineStatus();
   const pending = useLiveQuery(() => db.pending.count(), [], 0);
+  const routeRow = useLiveQuery(
+    () => (shift ? db.routes.get(shift.route_id) : undefined),
+    [shift?.route_id],
+  );
   const geo = useGeolocation(gpsEnabled);
   const arrivedSinceRef = useRef<number | null>(null);
   const autoAdvancedStopRef = useRef<string | null>(null);
+  const audioSpokenForRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (shift) loadRouteStops(shift.route_id);
@@ -97,39 +94,51 @@ export default function Run() {
 
   const { stops, currentIndex, totalPickups, done } = snapshot;
   const currentStop = stops[currentIndex];
+  const displayTotal = totalPickups + currentCount;
 
-  // Distance to current stop (only when both GPS fix and stop coords exist)
+  const busLat = geo.kind === 'fix' ? geo.position.lat : null;
+  const busLng = geo.kind === 'fix' ? geo.position.lng : null;
+  const busHeading = geo.kind === 'fix' ? (geo.position.heading ?? null) : null;
+
   const distanceToStop =
-    geo.kind === 'fix' && currentStop?.lat != null && currentStop?.lng != null
-      ? haversineMetres(
-          geo.position.lat,
-          geo.position.lng,
-          currentStop.lat,
-          currentStop.lng,
-        )
+    busLat != null && busLng != null && currentStop?.lat != null && currentStop?.lng != null
+      ? haversineMetres(busLat, busLng, currentStop.lat, currentStop.lng)
       : null;
 
-  // Reset arrival timer when the current stop changes
+  const distanceAlongRoute =
+    busLat != null && busLng != null && currentIndex < stops.length
+      ? distanceAlongRouteToIndex(busLat, busLng, stops, currentIndex)
+      : null;
+
+  const distanceDisplay = distanceAlongRoute ?? distanceToStop;
+
+  // Find next scheduled stop (kind='stop') at or after currentIndex
+  const nextScheduledStop = stops.slice(currentIndex).find((s) => s.kind === 'stop') ?? null;
+
+  // Next stop scheduled-time status
+  const nextStopStatus: OnTimeStatus = nextScheduledStop
+    ? statusForScheduled(nextScheduledStop.scheduled_time, now)
+    : 'ontime';
+
+  // Reset arrival dwell timer when current stop changes
   useEffect(() => {
     arrivedSinceRef.current = null;
   }, [currentStop?.id]);
 
-  // Speak the current stop's instruction ~30s before its scheduled time.
+  // Distance-based audio: speak instruction when ≤ AUDIO_TRIGGER_M to current stop/turn
   useEffect(() => {
     if (!currentStop || !audioUnlocked || muted) return;
     const text = currentStop.instruction_audio_cue || currentStop.instruction_text;
     if (!text) return;
-    if (!currentStop.scheduled_time) {
+    const key = `${currentStop.id}-audio`;
+    if (audioSpokenForRef.current === key) return;
+    if (distanceDisplay != null && distanceDisplay <= AUDIO_TRIGGER_M) {
+      audioSpokenForRef.current = key;
       speak(text);
-      return;
     }
-    const target = scheduledTimeToday(currentStop.scheduled_time, now);
-    const triggerAt = target.getTime() - SPEAK_LOOKAHEAD_MS;
-    if (now.getTime() >= triggerAt) speak(text);
-  }, [currentStop?.id, audioUnlocked, muted, now]);
+  }, [currentStop?.id, distanceDisplay, audioUnlocked, muted]);
 
-  // Geofence auto-advance: once the bus has been within ARRIVED_DISTANCE for
-  // the per-kind dwell time, log the stop_event (or 0-count turn passing).
+  // GPS geofence auto-advance
   const dwellMs = currentStop?.kind === 'turn' ? ARRIVAL_DWELL_MS_TURN : ARRIVAL_DWELL_MS_STOP;
   useEffect(() => {
     if (!shift || !currentStop || distanceToStop == null) return;
@@ -160,10 +169,6 @@ export default function Run() {
     );
   }
 
-  const status: OnTimeStatus = currentStop
-    ? statusForScheduled(currentStop.scheduled_time, now)
-    : 'ontime';
-
   function handleUnlock() {
     unlockSpeech();
     setAudioUnlocked(true);
@@ -187,7 +192,7 @@ export default function Run() {
     cancelSpeech();
     const isTurn = currentStop.kind === 'turn';
     const noteParts: string[] = [];
-    if (opts.source === 'gps') noteParts.push('auto-advanced via GPS geofence');
+    if (opts.source === 'gps') noteParts.push('auto-advanced via GPS');
     if (isTurn) noteParts.push('turn waypoint');
     const note = noteParts.length > 0 ? noteParts.join('; ') : null;
     const count = isTurn ? 0 : currentCount;
@@ -200,11 +205,12 @@ export default function Run() {
       note,
       synced_at: null,
     });
+    audioSpokenForRef.current = null;
     setCurrentCount(0);
     if (audioUnlocked && !muted) {
       const utterance = isTurn
-        ? `Turn complete.`
-        : `Logged ${count} at ${currentStop.stop_name}.`;
+        ? 'Turn complete.'
+        : `${count} logged at ${currentStop.stop_name}.`;
       speak(utterance, { dedupe: false, preempt: true });
     }
   }
@@ -217,234 +223,212 @@ export default function Run() {
     navigate('/run/end');
   }
 
-  // GPS status text for the small badge in the header
-  let gpsBadge: { label: string; tone: 'good' | 'warn' | 'off' } = { label: 'GPS off', tone: 'off' };
+  // GPS status badge
+  let gpsBadge: { label: string; cls: string } = {
+    label: 'GPS off',
+    cls: 'bg-slate-700 text-slate-400',
+  };
   if (gpsEnabled) {
     if (geo.kind === 'fix') {
-      gpsBadge =
-        distanceToStop != null
-          ? { label: `GPS · ${formatDistance(distanceToStop)}`, tone: 'good' }
-          : { label: 'GPS · no stop coords', tone: 'warn' };
+      gpsBadge = {
+        label: distanceDisplay != null ? `GPS · ${formatDistance(distanceDisplay)}` : 'GPS ✓',
+        cls: 'bg-emerald-500/20 text-emerald-300',
+      };
     } else if (geo.kind === 'permission_denied') {
-      gpsBadge = { label: 'GPS denied', tone: 'warn' };
-    } else if (geo.kind === 'unsupported') {
-      gpsBadge = { label: 'GPS unsupported', tone: 'warn' };
-    } else if (geo.kind === 'unavailable') {
-      gpsBadge = { label: 'GPS unavailable', tone: 'warn' };
+      gpsBadge = { label: 'GPS denied', cls: 'bg-red-500/20 text-red-300' };
     } else {
-      gpsBadge = { label: 'GPS waiting…', tone: 'warn' };
+      gpsBadge = { label: 'GPS waiting…', cls: 'bg-amber-500/20 text-amber-300' };
     }
   }
-  const gpsBadgeClass =
-    gpsBadge.tone === 'good'
-      ? 'bg-emerald-500/15 text-emerald-200'
-      : gpsBadge.tone === 'warn'
-        ? 'bg-amber-500/15 text-amber-200'
-        : 'bg-slate-700 text-slate-300';
 
-  // Approaching / arrived banner
-  let proximityBanner: { label: string; className: string } | null = null;
+  // Proximity banner
+  let proximityBanner: { label: string; cls: string; showManual: boolean } | null = null;
   if (distanceToStop != null && currentStop) {
     const isTurn = currentStop.kind === 'turn';
     if (distanceToStop <= ARRIVED_DISTANCE_M) {
       if (autoAdvancedStopRef.current === currentStop.id) {
         proximityBanner = {
-          label: isTurn ? 'Turn passed.' : 'Auto-logged this stop.',
-          className: 'bg-emerald-500/20 text-emerald-100',
-        };
-      } else if (isTurn) {
-        proximityBanner = {
-          label: 'At turn — advancing.',
-          className: 'bg-blue-500/20 text-blue-100',
+          label: isTurn ? 'Turn passed.' : 'Stop logged ✓',
+          cls: 'bg-emerald-500/20 text-emerald-200',
+          showManual: false,
         };
       } else {
-        const elapsedAtStop = arrivedSinceRef.current
-          ? Math.max(0, ARRIVAL_DWELL_MS_STOP - (Date.now() - arrivedSinceRef.current))
-          : ARRIVAL_DWELL_MS_STOP;
-        const seconds = Math.ceil(elapsedAtStop / 1000);
-        proximityBanner = {
-          label: `Arrived. Auto-logging in ${seconds}s — keep counting.`,
-          className: 'bg-emerald-500/20 text-emerald-100',
-        };
+        const elapsed = arrivedSinceRef.current ? Date.now() - arrivedSinceRef.current : 0;
+        const remaining = Math.max(0, Math.ceil((dwellMs - elapsed) / 1000));
+        proximityBanner = isTurn
+          ? { label: 'At turn — advancing.', cls: 'bg-blue-500/20 text-blue-200', showManual: false }
+          : {
+              label: `Arrived · auto-logging in ${remaining}s`,
+              cls: 'bg-emerald-500/20 text-emerald-200',
+              showManual: true,
+            };
       }
     } else if (distanceToStop <= APPROACHING_DISTANCE_M) {
       proximityBanner = {
-        label: `${isTurn ? 'Turn ahead' : 'Approaching'} · ${formatDistance(distanceToStop)} to go`,
-        className: 'bg-blue-500/15 text-blue-100',
+        label: `${isTurn ? 'Turn ahead' : 'Approaching'} · ${formatDistance(distanceToStop)}`,
+        cls: 'bg-blue-500/15 text-blue-200',
+        showManual: false,
       };
     }
   }
 
+  // Direction arrow for turn banner
+  const turnArrow = directionFromInstruction(currentStop?.instruction_text ?? null);
+
   return (
-    <main className="flex min-h-full flex-col gap-4 p-4">
-      <header className="flex items-center justify-between text-sm text-slate-400">
-        <div className="flex items-center gap-3">
-          <span>{formatElapsed(shift.started_at, now)} elapsed</span>
+    <main className="flex h-full flex-col bg-slate-900 overflow-hidden">
+      {/* ── Status bar ─────────────────────────────────────────────────── */}
+      <div className="shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 text-xs text-slate-400 border-b border-slate-800">
+        <div className="flex items-center gap-2">
+          <span>{formatElapsed(shift.started_at, now)}</span>
           <span
-            className={`rounded-full px-2 py-0.5 text-xs uppercase tracking-widest ${
-              online
-                ? 'bg-emerald-500/15 text-emerald-200'
-                : 'bg-amber-500/15 text-amber-200'
+            className={`rounded-full px-2 py-0.5 uppercase tracking-widest ${
+              online ? 'text-emerald-400' : 'text-amber-400'
             }`}
-            title={pending ? `${pending} change${pending === 1 ? '' : 's'} waiting to upload` : undefined}
           >
-            {online ? (pending ? `Sync: ${pending} queued` : 'Online') : 'Offline'}
+            {online ? (pending ? `Sync: ${pending}` : 'Online') : 'Offline'}
           </span>
           <button
             type="button"
             onClick={toggleGps}
-            className={`rounded-full px-2 py-0.5 text-xs uppercase tracking-widest ${gpsBadgeClass}`}
-            title={gpsEnabled ? 'Tap to disable GPS auto-advance' : 'Tap to enable GPS auto-advance'}
+            className={`rounded-full px-2 py-0.5 uppercase tracking-widest ${gpsBadge.cls}`}
           >
             {gpsBadge.label}
           </button>
         </div>
-        <div className="flex items-center gap-3">
-          <span>
-            Step {Math.min(currentIndex + 1, stops.length)} of {stops.length || '—'}
-          </span>
+        <div className="flex items-center gap-2">
           {isSpeechSupported() && audioUnlocked && (
             <button
               type="button"
               onClick={toggleMute}
-              className="rounded-full border border-slate-700 px-3 py-1 text-xs uppercase tracking-widest text-slate-300"
-              aria-label={muted ? 'Unmute audio' : 'Mute audio'}
+              className="rounded-full border border-slate-700 px-2 py-0.5 uppercase tracking-widest"
             >
               {muted ? 'Muted' : 'Audio on'}
             </button>
           )}
+          <button
+            type="button"
+            onClick={endRun}
+            disabled={ending}
+            className="rounded-full bg-slate-700 px-3 py-0.5 font-semibold text-slate-200 active:bg-slate-600 disabled:opacity-50"
+          >
+            {ending ? 'Ending…' : 'End run'}
+          </button>
         </div>
-      </header>
+      </div>
 
+      {/* ── Audio unlock prompt ─────────────────────────────────────────── */}
       {isSpeechSupported() && !audioUnlocked && (
         <button
           type="button"
           onClick={handleUnlock}
-          className="rounded-2xl bg-emerald-500/15 px-4 py-3 text-sm text-emerald-200"
+          className="shrink-0 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-200 text-center border-b border-emerald-500/20"
         >
-          Tap once to enable spoken instructions.
+          Tap once to enable spoken instructions
         </button>
       )}
 
-      {proximityBanner && (
-        <div className={`rounded-2xl px-4 py-3 text-sm font-bold ${proximityBanner.className}`}>
-          {proximityBanner.label}
-        </div>
-      )}
-
+      {/* ── Next turn banner ────────────────────────────────────────────── */}
       {currentStop ? (
-        <>
-          <section className={`rounded-3xl p-5 ${bandClass(status)}`}>
-            <p className="text-xs uppercase tracking-widest opacity-70">
-              {currentStop.kind === 'turn' ? 'Next turn' : 'Next instruction'}
-            </p>
-            <p className="mt-2 text-instruction">
+        <div className={`shrink-0 flex items-center gap-3 px-4 py-3 border-b border-slate-700 ${bandClass(nextStopStatus)}`}>
+          {currentStop.kind === 'turn' && (
+            <span className="text-4xl leading-none font-bold">{turnArrow}</span>
+          )}
+          <div className="min-w-0">
+            <p className="text-xl font-bold leading-tight truncate">
               {currentStop.instruction_text || currentStop.stop_name}
             </p>
-          </section>
-
-          <section className="rounded-3xl bg-slate-800 p-5">
-            <p className="text-xs uppercase tracking-widest text-slate-400">
-              {currentStop.kind === 'turn' ? 'Turn' : 'Stop'}
-            </p>
-            <p className="text-stop">
-              {currentStop.stop_name}
-              {currentStop.scheduled_time && (
-                <span className="ml-3 align-baseline text-base font-medium text-slate-400">
-                  {currentStop.scheduled_time.slice(0, 5)}
-                </span>
-              )}
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <a
-                href={navigateUrlForStop(currentStop.stop_name, currentStop.lat, currentStop.lng)}
-                target="_blank"
-                rel="noreferrer"
-                className="min-h-touch rounded-2xl bg-blue-500 px-4 py-3 text-center text-lg font-bold text-slate-900 active:bg-blue-400"
-              >
-                {currentStop.kind === 'turn' ? 'Navigate to this turn' : 'Navigate to this stop'}
-              </a>
-              {(() => {
-                const remaining = stops.slice(currentIndex);
-                const url = navigateUrlForRemainingStops(remaining);
-                if (!url || remaining.length < 2) return <span />;
-                return (
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="min-h-touch rounded-2xl bg-slate-700 px-4 py-3 text-center text-lg font-bold text-slate-100 active:bg-slate-600"
-                  >
-                    Navigate full route
-                  </a>
-                );
-              })()}
-            </div>
-          </section>
-
-          {currentStop.kind === 'turn' ? (
-            <section className="rounded-3xl bg-slate-800 p-5 text-center">
-              <p className="text-sm text-slate-400">
-                Pass through this turn — counter is hidden until the next stop.
-              </p>
-              <button
-                type="button"
-                onClick={() => logCurrentStop()}
-                className="btn-primary mt-3"
-              >
-                Turn done
-              </button>
-            </section>
-          ) : (
-            <section className="rounded-3xl bg-slate-800 p-5 text-center">
-              <p className="text-xs uppercase tracking-widest text-slate-400">Picked up here</p>
-              <p className="text-counter">{currentCount}</p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setCurrentCount((c) => Math.max(0, c - 1))}
-                  className="btn-secondary"
-                  aria-label="Decrease count"
-                >
-                  &minus;
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentCount((c) => c + 1)}
-                  className="btn-primary"
-                  aria-label="Increase count"
-                >
-                  +
-                </button>
-              </div>
-              <button type="button" onClick={() => logCurrentStop()} className="btn-primary mt-3">
-                Stop reached
-              </button>
-            </section>
-          )}
-        </>
+            {distanceDisplay != null && (
+              <p className="text-sm opacity-70">in {formatDistance(distanceDisplay)}</p>
+            )}
+          </div>
+        </div>
       ) : (
-        <section className="rounded-3xl bg-emerald-500/10 p-5 text-center">
-          <p className="text-stop text-emerald-200">
-            {done ? 'All stops complete.' : 'No stops loaded for this route yet.'}
-          </p>
-          <p className="mt-2 text-slate-300">
-            {done
-              ? 'Tap “End run” to finish and sync.'
-              : 'Ask an admin to add stops to this route.'}
-          </p>
-        </section>
+        <div className="shrink-0 px-4 py-3 border-b border-slate-700 text-slate-400 text-sm">
+          {done ? 'All stops complete — tap End run.' : 'No stops loaded for this route.'}
+        </div>
       )}
 
-      <section className="mt-auto flex items-center justify-between rounded-3xl bg-slate-800 p-5">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-slate-400">On bus today</p>
-          <p className="text-counter leading-none">{totalPickups}</p>
+      {/* ── Next scheduled stop strip ──────────────────────────────────── */}
+      {nextScheduledStop && nextScheduledStop !== currentStop && (
+        <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-slate-800/60 border-b border-slate-700 text-sm">
+          <span className="text-slate-300 truncate">
+            Next stop:{' '}
+            <span className="font-semibold text-white">{nextScheduledStop.stop_name}</span>
+            {nextScheduledStop.scheduled_time && (
+              <span className="ml-2 text-slate-400">{nextScheduledStop.scheduled_time.slice(0, 5)}</span>
+            )}
+          </span>
+          <span
+            className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-widest ${
+              nextStopStatus === 'late'
+                ? 'bg-red-500/20 text-red-300'
+                : nextStopStatus === 'delayed'
+                  ? 'bg-amber-500/20 text-amber-300'
+                  : 'bg-emerald-500/20 text-emerald-300'
+            }`}
+          >
+            {nextStopStatus === 'late' ? 'Late' : nextStopStatus === 'delayed' ? 'Delayed' : 'On time'}
+          </span>
         </div>
-        <button type="button" onClick={endRun} className="btn-secondary w-auto px-6" disabled={ending}>
-          {ending ? 'Ending…' : 'End run'}
+      )}
+
+      {/* ── Proximity banner (floating over map top) ───────────────────── */}
+      {proximityBanner && (
+        <div className={`shrink-0 flex items-center justify-between px-4 py-2 text-sm font-semibold border-b border-slate-700 ${proximityBanner.cls}`}>
+          <span>{proximityBanner.label}</span>
+          {proximityBanner.showManual && (
+            <button
+              type="button"
+              onClick={() => logCurrentStop()}
+              className="ml-4 rounded-xl bg-emerald-500 px-3 py-1 text-xs font-bold text-slate-900 active:bg-emerald-400"
+            >
+              Log now
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Map ────────────────────────────────────────────────────────── */}
+      <div className="flex-1 min-h-0">
+        <RouteMap
+          stops={stops}
+          busLat={busLat}
+          busLng={busLng}
+          busHeading={busHeading}
+          currentStopIndex={currentIndex}
+          pathGeoJson={routeRow?.path_geojson ?? null}
+        />
+      </div>
+
+      {/* ── Passenger counter bottom bar ────────────────────────────────── */}
+      <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-slate-900 border-t border-slate-700">
+        <button
+          type="button"
+          onClick={() => setCurrentCount((c) => Math.max(0, c - 1))}
+          aria-label="Remove one"
+          className="w-16 h-16 rounded-2xl bg-slate-700 text-3xl font-bold text-slate-100 active:bg-slate-600 select-none"
+        >
+          −
         </button>
-      </section>
+
+        <div className="flex-1 text-center">
+          <p className="text-xs uppercase tracking-widest text-slate-400">On bus</p>
+          <p className="text-5xl font-bold tabular-nums leading-none">{displayTotal}</p>
+          {currentCount > 0 && (
+            <p className="text-xs text-slate-400 mt-0.5">+{currentCount} this stop</p>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setCurrentCount((c) => c + 1)}
+          aria-label="Add one"
+          className="w-20 h-20 rounded-2xl bg-blue-500 text-4xl font-bold text-white active:bg-blue-400 select-none"
+        >
+          +
+        </button>
+      </div>
     </main>
   );
 }

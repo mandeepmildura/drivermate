@@ -24,6 +24,7 @@ export interface RouteRow {
   locked: boolean;
   version: number;
   updated_at: string;
+  path_geojson?: object | null;
 }
 
 export type RouteStopKind = 'stop' | 'turn';
