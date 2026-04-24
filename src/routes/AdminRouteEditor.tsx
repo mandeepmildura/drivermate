@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 import {
   createRoute,
@@ -204,6 +203,7 @@ export default function AdminRouteEditor() {
 
     map.on('load', () => {
       loadedRef.current = true;
+      map.resize();
 
       // Route line
       map.addSource('route-line', {
@@ -507,13 +507,13 @@ export default function AdminRouteEditor() {
 
       {/* ── Map + panel ────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
-        {/* Map */}
-        <div className="flex-1 min-h-0 min-w-0">
+        {/* Map — explicit 50vh on mobile so it never collapses on Safari */}
+        <div className="h-[50vh] lg:h-auto lg:flex-1 min-w-0">
           <div ref={containerRef} className="w-full h-full" />
         </div>
 
         {/* Side panel */}
-        <div className="shrink-0 w-full lg:w-80 flex flex-col gap-0 border-t lg:border-t-0 lg:border-l border-slate-700 overflow-y-auto bg-slate-900">
+        <div className="flex-1 lg:flex-none lg:w-80 flex flex-col gap-0 border-t lg:border-t-0 lg:border-l border-slate-700 overflow-y-auto bg-slate-900">
 
           {/* Route metadata */}
           <div className="p-4 border-b border-slate-700">

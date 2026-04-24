@@ -12,7 +12,10 @@
       "mcp__claude_ai_Gmail__create_draft",
       "mcp__claude_ai_Supabase__apply_migration",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(git commit --allow-empty -m ' *)"
     ]
   }
 }

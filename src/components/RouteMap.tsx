@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import type { FeatureCollection, Feature, LineString, Point } from 'geojson';
 import type { RouteStopRow } from '../lib/db';
 
@@ -115,6 +114,7 @@ export default function RouteMap({
 
     map.on('load', () => {
       loadedRef.current = true;
+      map.resize();
 
       map.addSource('route-line', {
         type: 'geojson',
