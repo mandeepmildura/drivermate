@@ -64,7 +64,19 @@ export interface StopEventRow {
   synced_at: string | null;
 }
 
-export type SyncEntity = 'shift' | 'stop_event';
+export interface GpsBreadcrumbRow {
+  id: string;
+  shift_id: string;
+  recorded_at: string;
+  lat: number;
+  lng: number;
+  heading: number | null;
+  speed: number | null;
+  accuracy: number | null;
+  synced_at: string | null;
+}
+
+export type SyncEntity = 'shift' | 'stop_event' | 'gps_breadcrumb';
 export type SyncOp = 'upsert';
 
 export interface PendingMutation {
@@ -85,6 +97,7 @@ class DriverMateDB extends Dexie {
   route_stops!: Table<RouteStopRow, string>;
   shifts!: Table<ShiftRow, string>;
   stop_events!: Table<StopEventRow, string>;
+  gps_breadcrumbs!: Table<GpsBreadcrumbRow, string>;
   pending!: Table<PendingMutation, number>;
 
   constructor() {
@@ -97,6 +110,9 @@ class DriverMateDB extends Dexie {
       shifts: 'id, driver_id, started_at, synced_at',
       stop_events: 'id, shift_id, synced_at',
       pending: '++id, entity, enqueued_at',
+    });
+    this.version(2).stores({
+      gps_breadcrumbs: 'id, shift_id, recorded_at, synced_at',
     });
   }
 }

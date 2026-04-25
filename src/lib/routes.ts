@@ -17,11 +17,13 @@ export async function loadActiveRoutes(): Promise<CachedFetchResult<RouteRow>> {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from('routes')
-      .select('id, route_number, display_number, description, active, locked, version, updated_at, path_geojson')
+      .select('id, route_number, display_number, description, active, locked, version, updated_at')
       .eq('active', true)
       .order('route_number');
     if (error) throw error;
 
+    // path_geojson is fetched lazily by loadRoutePath() once a route is picked,
+    // so the picker payload stays small even with many routes.
     const rows: RouteRow[] = (data ?? []).map((r: RouteRow) => ({
       id: r.id,
       route_number: r.route_number,
@@ -72,6 +74,30 @@ export async function loadRouteStops(routeId: string): Promise<CachedFetchResult
       source: 'cache',
       error: err instanceof Error ? err.message : String(err),
     };
+  }
+}
+
+export async function loadRoutePath(routeId: string): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('routes')
+      .select('path_geojson, version, updated_at')
+      .eq('id', routeId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return;
+    const existing = await db.routes.get(routeId);
+    if (!existing) return;
+    await db.routes.put({
+      ...existing,
+      version: data.version ?? existing.version,
+      updated_at: data.updated_at ?? existing.updated_at,
+      path_geojson: data.path_geojson ?? null,
+    });
+  } catch {
+    // Offline / transient — driver still has the cached path if previously loaded.
   }
 }
 

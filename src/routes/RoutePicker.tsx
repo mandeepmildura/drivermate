@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { loadActiveRoutes } from '../lib/routes';
+import { loadActiveRoutes, loadRoutePath } from '../lib/routes';
 import { useShiftSetup } from '../state/ShiftSetupProvider';
 import { useSession } from '../state/SessionProvider';
 import { signOutDriver } from '../lib/auth';
@@ -29,6 +29,7 @@ export default function RoutePicker() {
 
   function pick(routeId: string) {
     setRoute(routeId);
+    void loadRoutePath(routeId); // fire-and-forget — populates path_geojson before /run renders
     navigate('/bus');
   }
 

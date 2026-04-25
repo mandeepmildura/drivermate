@@ -1,9 +1,10 @@
-import { db, type PendingMutation, type ShiftRow, type StopEventRow } from './db';
+import { db, type GpsBreadcrumbRow, type PendingMutation, type ShiftRow, type StopEventRow } from './db';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 
 const TABLE_FOR_ENTITY: Record<PendingMutation['entity'], string> = {
   shift: 'shifts',
   stop_event: 'stop_events',
+  gps_breadcrumb: 'gps_breadcrumbs',
 };
 
 const MAX_ATTEMPTS_BEFORE_PAUSE = 5;
@@ -26,6 +27,13 @@ export async function recordStopEvent(event: StopEventRow): Promise<void> {
   await db.transaction('rw', db.stop_events, db.pending, async () => {
     await db.stop_events.put(event);
     await enqueue('stop_event', event.id, event as unknown as Record<string, unknown>);
+  });
+}
+
+export async function recordBreadcrumb(crumb: GpsBreadcrumbRow): Promise<void> {
+  await db.transaction('rw', db.gps_breadcrumbs, db.pending, async () => {
+    await db.gps_breadcrumbs.put(crumb);
+    await enqueue('gps_breadcrumb', crumb.id, crumb as unknown as Record<string, unknown>);
   });
 }
 
@@ -52,17 +60,21 @@ export async function flushPendingMutations(): Promise<SyncResult> {
   }
 
   const supabase = getSupabase();
-  const pending = await db.pending
-    .where('attempts')
-    .below(MAX_ATTEMPTS_BEFORE_PAUSE)
-    .sortBy('enqueued_at');
+  // attempts isn't an indexed column on the pending table, so filter in memory
+  // (the queue is small — under 10k rows even on a long offline stretch).
+  const all = await db.pending.orderBy('enqueued_at').toArray();
+  const pending = all.filter((m) => m.attempts < MAX_ATTEMPTS_BEFORE_PAUSE);
 
   let pushed = 0;
   let failed = 0;
 
   for (const mutation of pending) {
     const table = TABLE_FOR_ENTITY[mutation.entity];
-    const { error } = await supabase.from(table).upsert(mutation.payload);
+    // Strip synced_at — that column is NOT NULL DEFAULT now() server-side,
+    // and a null payload would be rejected as 400 Bad Request.
+    const { synced_at: _drop, ...payload } = mutation.payload as Record<string, unknown>;
+    void _drop;
+    const { error } = await supabase.from(table).upsert(payload);
 
     if (error) {
       failed += 1;
@@ -78,8 +90,10 @@ export async function flushPendingMutations(): Promise<SyncResult> {
     const stamp = new Date().toISOString();
     if (mutation.entity === 'shift') {
       await db.shifts.update(mutation.row_id, { synced_at: stamp });
-    } else {
+    } else if (mutation.entity === 'stop_event') {
       await db.stop_events.update(mutation.row_id, { synced_at: stamp });
+    } else if (mutation.entity === 'gps_breadcrumb') {
+      await db.gps_breadcrumbs.update(mutation.row_id, { synced_at: stamp });
     }
   }
 

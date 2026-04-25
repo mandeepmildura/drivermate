@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../state/SessionProvider';
 import { loadRouteStops } from '../lib/routes';
-import { recordShift, recordStopEvent } from '../lib/sync';
+import { recordBreadcrumb, recordShift, recordStopEvent } from '../lib/sync';
 import {
   bandClass,
   formatElapsed,
@@ -26,12 +26,14 @@ import { db } from '../lib/db';
 import { haversineMetres, useGeolocation } from '../lib/geo';
 import { distanceAlongRouteToIndex, directionFromInstruction } from '../lib/turfUtils';
 import RouteMap from '../components/RouteMap';
+import { RouteSimulator } from '../components/RouteSimulator';
 
 const AUDIO_TRIGGER_M = 150;
 const APPROACHING_DISTANCE_M = 200;
 const ARRIVED_DISTANCE_M = 50;
 const ARRIVAL_DWELL_MS_STOP = 8_000;
 const ARRIVAL_DWELL_MS_TURN = 0;
+const BREADCRUMB_INTERVAL_MS = 5_000;
 const GEO_PREF_KEY = 'drivermate.gpsAutoAdvance';
 
 function useNow(intervalMs = 1000): Date {
@@ -160,6 +162,33 @@ export default function Run() {
       logCurrentStop({ source: 'gps' });
     }
   }, [distanceToStop, currentStop?.id, shift?.id, dwellMs]);
+
+  // GPS breadcrumb recorder — captures one fix every 5s while a shift is active.
+  // Doubles as Vic Bus Safety Reg 31 retention data and as the source for
+  // road-following polylines (see admin "Use trace as route line" tool).
+  const geoRef = useRef(geo);
+  geoRef.current = geo;
+  useEffect(() => {
+    if (!shift || shift.ended_at) return;
+    const tick = () => {
+      const g = geoRef.current;
+      if (g.kind !== 'fix') return;
+      const p = g.position;
+      void recordBreadcrumb({
+        id: newId(),
+        shift_id: shift.id,
+        recorded_at: new Date(p.timestamp).toISOString(),
+        lat: p.lat,
+        lng: p.lng,
+        heading: p.heading,
+        speed: p.speed,
+        accuracy: p.accuracy,
+        synced_at: null,
+      });
+    };
+    const id = window.setInterval(tick, BREADCRUMB_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [shift?.id, shift?.ended_at]);
 
   if (shift === undefined || shift === null) {
     return (
@@ -429,6 +458,8 @@ export default function Run() {
           +
         </button>
       </div>
+
+      <RouteSimulator stops={stops} />
     </main>
   );
 }

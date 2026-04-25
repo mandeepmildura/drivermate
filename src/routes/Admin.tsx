@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { listAllRoutes } from '../lib/adminRoutes';
 import type { RouteRow } from '../lib/db';
 
 export default function Admin() {
   const [routes, setRoutes] = useState<RouteRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     listAllRoutes()
@@ -15,6 +16,13 @@ export default function Admin() {
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-6">
+      <button
+        type="button"
+        onClick={() => navigate('/')}
+        className="self-start rounded-xl bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
+      >
+        ← Back to driver
+      </button>
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black">Route admin</h1>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getSimulatedPosition, subscribeSimulator, type SimulatedPosition } from './simulator';
 
 export interface GeoPosition {
   lat: number;
@@ -33,6 +34,20 @@ export function haversineMetres(
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(a));
 }
 
+function simulatedToStatus(sim: SimulatedPosition): GeoStatus {
+  return {
+    kind: 'fix',
+    position: {
+      lat: sim.lat,
+      lng: sim.lng,
+      accuracy: 5,
+      heading: sim.heading ?? null,
+      speed: 0,
+      timestamp: Date.now(),
+    },
+  };
+}
+
 export function useGeolocation(enabled: boolean): GeoStatus {
   const [status, setStatus] = useState<GeoStatus>({ kind: 'idle' });
 
@@ -41,36 +56,65 @@ export function useGeolocation(enabled: boolean): GeoStatus {
       setStatus({ kind: 'idle' });
       return;
     }
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setStatus({ kind: 'unsupported' });
-      return;
-    }
 
-    const id = navigator.geolocation.watchPosition(
-      (pos) => {
-        setStatus({
-          kind: 'fix',
-          position: {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            heading: pos.coords.heading,
-            speed: pos.coords.speed,
-            timestamp: pos.timestamp,
-          },
-        });
-      },
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          setStatus({ kind: 'permission_denied' });
-        } else {
-          setStatus({ kind: 'unavailable', message: err.message });
-        }
-      },
-      { enableHighAccuracy: true, maximumAge: 5_000, timeout: 30_000 },
-    );
+    let watchId: number | null = null;
 
-    return () => navigator.geolocation.clearWatch(id);
+    const stopRealWatch = () => {
+      if (watchId !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+    };
+
+    const startRealWatch = () => {
+      if (watchId !== null) return;
+      if (typeof navigator === 'undefined' || !navigator.geolocation) {
+        setStatus({ kind: 'unsupported' });
+        return;
+      }
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (getSimulatedPosition()) return; // simulator took over mid-flight
+          setStatus({
+            kind: 'fix',
+            position: {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              accuracy: pos.coords.accuracy,
+              heading: pos.coords.heading,
+              speed: pos.coords.speed,
+              timestamp: pos.timestamp,
+            },
+          });
+        },
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            setStatus({ kind: 'permission_denied' });
+          } else {
+            setStatus({ kind: 'unavailable', message: err.message });
+          }
+        },
+        { enableHighAccuracy: true, maximumAge: 5_000, timeout: 30_000 },
+      );
+    };
+
+    const apply = () => {
+      const sim = getSimulatedPosition();
+      if (sim) {
+        stopRealWatch();
+        setStatus(simulatedToStatus(sim));
+      } else {
+        startRealWatch();
+      }
+    };
+
+    apply();
+    const unsub = subscribeSimulator(apply);
+
+    return () => {
+      unsub();
+      stopRealWatch();
+    };
   }, [enabled]);
 
   return status;
