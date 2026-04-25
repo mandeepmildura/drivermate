@@ -3,9 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Until we generate Database types, use `any` for the schema generic.
-// The runtime client is configured to talk to the `drivermate` Postgres schema.
-export type Client = SupabaseClient<any, 'drivermate', 'drivermate'>;
+export type Client = SupabaseClient;
 
 let client: Client | null = null;
 
@@ -16,8 +14,7 @@ export function getSupabase(): Client {
     );
   }
   if (!client) {
-    client = createClient<any, 'drivermate', 'drivermate'>(url, anonKey, {
-      db: { schema: 'drivermate' },
+    client = createClient(url, anonKey, {
       auth: { persistSession: true, autoRefreshToken: true },
     });
   }
