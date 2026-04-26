@@ -24,7 +24,11 @@ import { useOnlineStatus } from '../lib/useOnlineStatus';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { haversineMetres, useGeolocation } from '../lib/geo';
-import { distanceAlongRouteToIndex, directionFromInstruction } from '../lib/turfUtils';
+import {
+  distanceAlongRouteToIndex,
+  directionFromInstruction,
+  hasPassedWaypoint,
+} from '../lib/turfUtils';
 import RouteMap from '../components/RouteMap';
 import { RouteSimulator } from '../components/RouteSimulator';
 
@@ -114,6 +118,11 @@ export default function Run() {
 
   const distanceDisplay = distanceAlongRoute ?? distanceToStop;
 
+  const passedCurrentStop =
+    busLat != null && busLng != null && currentIndex < stops.length
+      ? hasPassedWaypoint(busLat, busLng, stops, currentIndex)
+      : false;
+
   // Find next scheduled stop (kind='stop') at or after currentIndex
   const nextScheduledStop = stops.slice(currentIndex).find((s) => s.kind === 'stop') ?? null;
 
@@ -140,11 +149,27 @@ export default function Run() {
     }
   }, [currentStop?.id, distanceDisplay, audioUnlocked, muted]);
 
-  // GPS geofence auto-advance
+  // GPS geofence auto-advance.
+  // Two triggers:
+  //   1. Bus inside 50 m for the dwell window (8 s for stops, 0 s for turns).
+  //   2. Bus has clearly driven past the waypoint along the route line.
+  // Trigger #2 catches request-stops the driver blew past without halting and
+  // turn waypoints that sit a bit off the road centreline — both of which
+  // would otherwise leave the navigation banner stuck on a waypoint that's
+  // already behind the bus.
   const dwellMs = currentStop?.kind === 'turn' ? ARRIVAL_DWELL_MS_TURN : ARRIVAL_DWELL_MS_STOP;
   useEffect(() => {
-    if (!shift || !currentStop || distanceToStop == null) return;
+    if (!shift || !currentStop) return;
     if (autoAdvancedStopRef.current === currentStop.id) return;
+
+    if (passedCurrentStop) {
+      autoAdvancedStopRef.current = currentStop.id;
+      arrivedSinceRef.current = null;
+      logCurrentStop({ source: 'gps' });
+      return;
+    }
+
+    if (distanceToStop == null) return;
 
     if (distanceToStop > ARRIVED_DISTANCE_M) {
       arrivedSinceRef.current = null;
@@ -161,7 +186,7 @@ export default function Run() {
       arrivedSinceRef.current = null;
       logCurrentStop({ source: 'gps' });
     }
-  }, [distanceToStop, currentStop?.id, shift?.id, dwellMs]);
+  }, [distanceToStop, passedCurrentStop, currentStop?.id, shift?.id, dwellMs]);
 
   // GPS breadcrumb recorder — captures one fix every 5s while a shift is active.
   // Doubles as Vic Bus Safety Reg 31 retention data and as the source for
