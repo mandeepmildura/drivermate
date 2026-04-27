@@ -5,7 +5,9 @@ import { db, type DriverRow } from './db';
 // Drivers don't have real email addresses — we synthesise one from the
 // depot driver number so we can use Supabase auth without giving every
 // driver a personal email account. The PIN they type is the password.
-const DRIVER_EMAIL_DOMAIN = 'drivermate.local';
+// Supabase auth's email validator rejects reserved TLDs like `.local`,
+// so use a real public TLD even though nothing is ever delivered here.
+const DRIVER_EMAIL_DOMAIN = 'drivermate.app';
 
 export function driverNumberToEmail(driverNumber: string): string {
   return `${driverNumber.trim().toLowerCase()}@${DRIVER_EMAIL_DOMAIN}`;
