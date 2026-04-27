@@ -76,6 +76,7 @@ const blankRoute: RouteDraft = {
   description: null,
   active: true,
   locked: false,
+  service_type: 'school',
   path_geojson: null,
 };
 
@@ -140,7 +141,8 @@ export default function AdminRouteEditor() {
           description: r.description,
           active: r.active,
           locked: r.locked,
-          path_geojson: r.path_geojson ?? null,
+          service_type: r.service_type,
+          path_geojson: (r.path_geojson as RouteDraft['path_geojson']) ?? null,
         });
         const loaded = s.map((stop) => ({
           _key: stop.id,
@@ -369,7 +371,10 @@ export default function AdminRouteEditor() {
           ? { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: pathCoords } }
           : null;
 
-      const draft: RouteDraft = { ...route, path_geojson: geojsonLine };
+      const draft: RouteDraft = {
+        ...route,
+        path_geojson: geojsonLine as RouteDraft['path_geojson'],
+      };
       const persisted = isNew ? await createRoute(draft) : await updateRoute(routeId!, draft);
       await saveStops(persisted.id, stops, removed);
       setRemoved([]);
@@ -551,6 +556,18 @@ export default function AdminRouteEditor() {
                   placeholder="AM run"
                   className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
                 />
+              </label>
+              <label className="flex flex-col gap-1 text-xs">
+                <span className="text-slate-400">Service type</span>
+                <select
+                  value={route.service_type}
+                  onChange={(e) => patchRoute({ service_type: e.target.value as RouteDraft['service_type'] })}
+                  disabled={!editable}
+                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                >
+                  <option value="school">School</option>
+                  <option value="vline">V/Line coach</option>
+                </select>
               </label>
               <label className="flex items-center gap-2 text-xs text-slate-300">
                 <input

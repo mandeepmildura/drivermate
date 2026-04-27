@@ -7,9 +7,19 @@ export interface CachedFetchResult<T> {
   error?: string;
 }
 
-export async function loadActiveRoutes(): Promise<CachedFetchResult<RouteRow>> {
+// Drivers see school routes by default. V/Line routes are only visible to
+// drivers with can_drive_vline = true.
+function visibleTo(canDriveVline: boolean): RouteRow['service_type'][] {
+  return canDriveVline ? ['school', 'vline'] : ['school'];
+}
+
+export async function loadActiveRoutes(canDriveVline: boolean): Promise<CachedFetchResult<RouteRow>> {
+  const allowed = visibleTo(canDriveVline);
+
   if (!isSupabaseConfigured) {
-    const local = (await db.routes.toArray()).filter((r) => r.active);
+    const local = (await db.routes.toArray()).filter(
+      (r) => r.active && allowed.includes(r.service_type),
+    );
     return { rows: local, source: 'cache' };
   }
 
@@ -17,14 +27,15 @@ export async function loadActiveRoutes(): Promise<CachedFetchResult<RouteRow>> {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from('routes')
-      .select('id, route_number, display_number, description, active, locked, version, updated_at')
+      .select('id, route_number, display_number, description, active, locked, version, updated_at, service_type')
       .eq('active', true)
+      .in('service_type', allowed)
       .order('route_number');
     if (error) throw error;
 
     // path_geojson is fetched lazily by loadRoutePath() once a route is picked,
     // so the picker payload stays small even with many routes.
-    const rows: RouteRow[] = (data ?? []).map((r: RouteRow) => ({
+    const rows: RouteRow[] = (data ?? []).map((r) => ({
       id: r.id,
       route_number: r.route_number,
       display_number: r.display_number,
@@ -33,6 +44,7 @@ export async function loadActiveRoutes(): Promise<CachedFetchResult<RouteRow>> {
       locked: r.locked,
       version: r.version,
       updated_at: r.updated_at,
+      service_type: (r.service_type as RouteRow['service_type']) ?? 'school',
     }));
 
     if (rows.length > 0) {
@@ -42,7 +54,7 @@ export async function loadActiveRoutes(): Promise<CachedFetchResult<RouteRow>> {
   } catch (err) {
     const fallback = await db.routes.toArray();
     return {
-      rows: fallback.filter((r) => r.active),
+      rows: fallback.filter((r) => r.active && allowed.includes(r.service_type)),
       source: 'cache',
       error: err instanceof Error ? err.message : String(err),
     };
@@ -94,7 +106,7 @@ export async function loadRoutePath(routeId: string): Promise<void> {
       ...existing,
       version: data.version ?? existing.version,
       updated_at: data.updated_at ?? existing.updated_at,
-      path_geojson: data.path_geojson ?? null,
+      path_geojson: (data.path_geojson as object | null) ?? null,
     });
   } catch {
     // Offline / transient — driver still has the cached path if previously loaded.

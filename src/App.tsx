@@ -1,20 +1,26 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Login from './routes/Login';
+import Register from './routes/Register';
 import RoutePicker from './routes/RoutePicker';
 import BusConfirm from './routes/BusConfirm';
 import Run from './routes/Run';
 import EndOfRun from './routes/EndOfRun';
 import Admin from './routes/Admin';
 import AdminRouteEditor from './routes/AdminRouteEditor';
+import AdminDrivers from './routes/AdminDrivers';
 import { startSyncLoop } from './lib/sync';
+import { startErrorReporter } from './lib/errorReporter';
 import { SessionProvider } from './state/SessionProvider';
 import { ShiftSetupProvider } from './state/ShiftSetupProvider';
 import RequireDriver from './state/RequireDriver';
 import RequireAdmin from './state/RequireAdmin';
 
 export default function App() {
-  useEffect(() => startSyncLoop(), []);
+  useEffect(() => {
+    startErrorReporter();
+    return startSyncLoop();
+  }, []);
 
   return (
     <SessionProvider>
@@ -22,6 +28,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route
             path="/routes"
             element={
@@ -60,6 +67,16 @@ export default function App() {
               <RequireDriver>
                 <RequireAdmin>
                   <Admin />
+                </RequireAdmin>
+              </RequireDriver>
+            }
+          />
+          <Route
+            path="/admin/drivers"
+            element={
+              <RequireDriver>
+                <RequireAdmin>
+                  <AdminDrivers />
                 </RequireAdmin>
               </RequireDriver>
             }

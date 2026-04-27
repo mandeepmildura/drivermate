@@ -1,5 +1,6 @@
-import { db, type RouteRow, type RouteStopRow, type RouteStopKind } from './db';
+import { db, type RouteRow, type RouteStopRow, type RouteStopKind, type ServiceType } from './db';
 import { getSupabase } from './supabase';
+import type { Json } from '../types/database';
 
 export interface RouteDraft {
   route_number: string;
@@ -7,7 +8,8 @@ export interface RouteDraft {
   description: string | null;
   active: boolean;
   locked: boolean;
-  path_geojson: object | null;
+  service_type: ServiceType;
+  path_geojson: Json | null;
 }
 
 export interface StopDraft {
@@ -26,7 +28,7 @@ export async function listAllRoutes(): Promise<RouteRow[]> {
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('routes')
-    .select('id, route_number, display_number, description, active, locked, version, updated_at')
+    .select('id, route_number, display_number, description, active, locked, version, updated_at, service_type')
     .order('route_number');
   if (error) throw error;
   const rows = (data ?? []) as RouteRow[];
@@ -41,7 +43,7 @@ export async function getRouteWithStops(
   const [routeRes, stopsRes] = await Promise.all([
     supabase
       .from('routes')
-      .select('id, route_number, display_number, description, active, locked, version, updated_at, path_geojson')
+      .select('id, route_number, display_number, description, active, locked, version, updated_at, service_type, path_geojson')
       .eq('id', routeId)
       .single(),
     supabase.from('route_stops').select('*').eq('route_id', routeId).order('sequence'),

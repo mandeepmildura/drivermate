@@ -14,9 +14,11 @@ export default function RoutePicker() {
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<'remote' | 'cache' | null>(null);
 
+  const canDriveVline = driver?.can_drive_vline ?? false;
+
   useEffect(() => {
     let cancelled = false;
-    loadActiveRoutes().then((res) => {
+    loadActiveRoutes(canDriveVline).then((res) => {
       if (cancelled) return;
       setRoutes(res.rows);
       setSource(res.source);
@@ -25,7 +27,7 @@ export default function RoutePicker() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [canDriveVline]);
 
   function pick(routeId: string) {
     setRoute(routeId);

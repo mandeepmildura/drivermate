@@ -6,6 +6,7 @@ export interface DriverRow {
   full_name: string;
   is_admin: boolean;
   active: boolean;
+  can_drive_vline: boolean;
 }
 
 export interface BusRow {
@@ -14,6 +15,8 @@ export interface BusRow {
   rego: string | null;
   active: boolean;
 }
+
+export type ServiceType = 'school' | 'vline';
 
 export interface RouteRow {
   id: string;
@@ -24,6 +27,7 @@ export interface RouteRow {
   locked: boolean;
   version: number;
   updated_at: string;
+  service_type: ServiceType;
   path_geojson?: object | null;
 }
 

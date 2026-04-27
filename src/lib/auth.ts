@@ -29,6 +29,52 @@ export async function signInDriver(driverNumber: string, pin: string): Promise<S
   return { ok: true };
 }
 
+export interface SignUpResult {
+  ok: boolean;
+  error?: string;
+}
+
+export async function registerDriver(
+  driverNumber: string,
+  pin: string,
+): Promise<SignUpResult> {
+  const trimmedNumber = driverNumber.trim();
+  if (!trimmedNumber) return { ok: false, error: 'Driver number is required.' };
+  if (!/^\d{4,12}$/.test(pin)) {
+    return { ok: false, error: 'PIN must be 4–12 digits.' };
+  }
+
+  const supabase = getSupabase();
+  const email = driverNumberToEmail(trimmedNumber);
+
+  // Step 1: create auth user. If email confirmation is on, this returns no
+  // session; we still proceed and try to link, since RLS only needs auth.uid().
+  const signUp = await supabase.auth.signUp({ email, password: pin });
+  if (signUp.error) {
+    if (signUp.error.message.toLowerCase().includes('already')) {
+      return { ok: false, error: 'This driver number already has a PIN. Sign in instead.' };
+    }
+    return { ok: false, error: signUp.error.message };
+  }
+
+  // Step 2: signUp does not always return an active session. Sign in
+  // explicitly so the next call has auth.uid() available.
+  const signIn = await supabase.auth.signInWithPassword({ email, password: pin });
+  if (signIn.error) return { ok: false, error: humanise(signIn.error) };
+
+  // Step 3: claim the pre-created drivers row by driver_number.
+  const { error: linkErr } = await supabase.rpc('register_driver', {
+    p_driver_number: trimmedNumber,
+  });
+  if (linkErr) {
+    // Roll back the auth session so the user isn't stranded with no driver row.
+    await supabase.auth.signOut();
+    return { ok: false, error: linkErr.message };
+  }
+
+  return { ok: true };
+}
+
 export async function signOutDriver(): Promise<void> {
   const supabase = getSupabase();
   await supabase.auth.signOut();
@@ -51,7 +97,7 @@ export async function loadDriverProfile(): Promise<ProfileResult> {
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('drivers')
-    .select('id, driver_number, full_name, is_admin, active')
+    .select('id, driver_number, full_name, is_admin, active, can_drive_vline')
     .maybeSingle();
   if (error) {
     console.error('[drivermate] loadDriverProfile failed:', error);
@@ -69,6 +115,7 @@ export async function loadDriverProfile(): Promise<ProfileResult> {
     full_name: data.full_name,
     is_admin: data.is_admin,
     active: data.active,
+    can_drive_vline: data.can_drive_vline ?? false,
   };
   await db.drivers.put(row);
   return { driver: row, error: null };
