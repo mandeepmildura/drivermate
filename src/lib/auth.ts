@@ -95,9 +95,18 @@ export interface ProfileResult {
 
 export async function loadDriverProfile(): Promise<ProfileResult> {
   const supabase = getSupabase();
+  const { data: userData, error: userErr } = await supabase.auth.getUser();
+  if (userErr) return { driver: null, error: userErr.message };
+  const userId = userData.user?.id;
+  if (!userId) return { driver: null, error: 'Not signed in.' };
+
+  // Filter by auth_user_id explicitly. RLS lets admins see every driver row,
+  // so without this filter `.maybeSingle()` would error on admin sign-in with
+  // "JSON object requested, multiple (or no) rows returned".
   const { data, error } = await supabase
     .from('drivers')
     .select('id, driver_number, full_name, is_admin, active, can_drive_vline')
+    .eq('auth_user_id', userId)
     .maybeSingle();
   if (error) {
     console.error('[drivermate] loadDriverProfile failed:', error);
