@@ -1,7 +1,10 @@
 import { db, type GpsBreadcrumbRow, type PendingMutation, type ShiftRow, type StopEventRow } from './db';
 import { getSupabase, isSupabaseConfigured } from './supabase';
+import type { Database } from '../types/database';
 
-const TABLE_FOR_ENTITY: Record<PendingMutation['entity'], string> = {
+type WritableTable = keyof Database['public']['Tables'];
+
+const TABLE_FOR_ENTITY: Record<PendingMutation['entity'], WritableTable> = {
   shift: 'shifts',
   stop_event: 'stop_events',
   gps_breadcrumb: 'gps_breadcrumbs',
@@ -74,7 +77,10 @@ export async function flushPendingMutations(): Promise<SyncResult> {
     // and a null payload would be rejected as 400 Bad Request.
     const { synced_at: _drop, ...payload } = mutation.payload as Record<string, unknown>;
     void _drop;
-    const { error } = await supabase.from(table).upsert(payload);
+    // Payload shape varies per entity; the typed client wants a discriminated
+    // union we can't easily produce from the generic queue, so cast at the
+    // upsert call site only.
+    const { error } = await supabase.from(table).upsert(payload as never);
 
     if (error) {
       failed += 1;

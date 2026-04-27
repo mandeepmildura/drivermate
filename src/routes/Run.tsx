@@ -31,6 +31,7 @@ import {
 } from '../lib/turfUtils';
 import RouteMap from '../components/RouteMap';
 import { RouteSimulator } from '../components/RouteSimulator';
+import { SyncHealthBanner } from '../components/SyncHealthBanner';
 
 const AUDIO_TRIGGER_M = 150;
 const APPROACHING_DISTANCE_M = 200;
@@ -370,6 +371,9 @@ export default function Run() {
           </button>
         </div>
       </div>
+
+      {/* ── Sync health banner (only visible when something is failing) ──── */}
+      <SyncHealthBanner />
 
       {/* ── Audio unlock prompt ─────────────────────────────────────────── */}
       {isSpeechSupported() && !audioUnlocked && (
