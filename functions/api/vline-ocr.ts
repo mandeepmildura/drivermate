@@ -18,7 +18,7 @@ const ALLOWED_ORIGINS = new Set([
 
 const STOP_CODES_C012 = ['BXG', 'SPE', 'BRL', 'DHX', 'KRA', 'LCH', 'LBG', 'SWH', 'NYH', 'WOO', 'PGL', 'MGN', 'ANU', 'BNN', 'RBC', 'EUS', 'MQL'];
 
-const MODEL_ID = 'claude-sonnet-4-20250514';
+const MODEL_ID = 'claude-sonnet-4-6';
 const MAX_IMAGES = 5;
 const MAX_BYTES = 4 * 1024 * 1024;
 
