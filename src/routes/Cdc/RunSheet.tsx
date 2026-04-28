@@ -198,7 +198,7 @@ function BoardingSection({
                 {p.priority && <span className="text-amber-400">★</span>}
               </div>
               <div className="text-xs text-slate-400">
-                → {STOP_NAMES[p.leaveStop]} · {p.ticketType === 'eTicket' ? 'e' : 'P'}
+                → {STOP_NAMES[p.leaveStop]}
               </div>
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2">

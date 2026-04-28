@@ -236,9 +236,7 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
                       <SeatPill seat={p.seat} />
                       <div className="min-w-0 flex-1 truncate text-sm">
                         <span className="font-bold text-slate-100">{p.name}</span>{' '}
-                        <span className="text-xs text-slate-400">
-                          → {STOP_NAMES[p.leaveStop]}
-                        </span>
+                        <span className="text-xs text-slate-400">→ {STOP_NAMES[p.leaveStop]}</span>
                         {p.priority && <span className="ml-1 text-amber-400">★</span>}
                       </div>
                     </div>

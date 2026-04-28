@@ -366,31 +366,19 @@ export default function ManifestUpload() {
                         ×
                       </button>
                     </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      <select
-                        value={p.leaveStop}
-                        onChange={(e) =>
-                          updatePassenger(p.id, { leaveStop: e.target.value as StopCode })
-                        }
-                        className="h-9 rounded-lg bg-slate-800 px-2 text-xs"
-                      >
-                        {stopOptions.map((s) => (
-                          <option key={s} value={s}>
-                            → {STOP_NAMES[s]}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={p.ticketType}
-                        onChange={(e) =>
-                          updatePassenger(p.id, { ticketType: e.target.value as TicketType })
-                        }
-                        className="h-9 rounded-lg bg-slate-800 px-2 text-xs"
-                      >
-                        <option value="eTicket">eTicket</option>
-                        <option value="Paper">Paper</option>
-                      </select>
-                    </div>
+                    <select
+                      value={p.leaveStop}
+                      onChange={(e) =>
+                        updatePassenger(p.id, { leaveStop: e.target.value as StopCode })
+                      }
+                      className="mt-2 h-9 w-full rounded-lg bg-slate-800 px-2 text-xs"
+                    >
+                      {stopOptions.map((s) => (
+                        <option key={s} value={s}>
+                          → {STOP_NAMES[s]}
+                        </option>
+                      ))}
+                    </select>
                     <label className="mt-2 flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold">
                       <input
                         type="checkbox"
@@ -464,7 +452,6 @@ export default function ManifestUpload() {
                   <th className="py-1 pr-2">Name</th>
                   <th className="py-1 pr-2">Join</th>
                   <th className="py-1 pr-2">Leave</th>
-                  <th className="py-1 pr-2">Ticket</th>
                   <th className="py-1 pr-2">Pri</th>
                   <th />
                 </tr>
@@ -512,16 +499,6 @@ export default function ManifestUpload() {
                             {STOP_NAMES[s]}
                           </option>
                         ))}
-                      </select>
-                    </td>
-                    <td className="py-1 pr-2">
-                      <select
-                        value={p.ticketType}
-                        onChange={(e) => updatePassenger(p.id, { ticketType: e.target.value as TicketType })}
-                        className="rounded bg-slate-900 px-2 py-1"
-                      >
-                        <option value="eTicket">e</option>
-                        <option value="Paper">P</option>
                       </select>
                     </td>
                     <td className="py-1 pr-2 text-center">
