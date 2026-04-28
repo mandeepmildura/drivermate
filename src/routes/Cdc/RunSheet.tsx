@@ -271,9 +271,34 @@ function AlightingSection({
   alighting: Passenger[];
   onSet: (id: string, patch: Partial<Passenger>) => void;
 }) {
+  const remainingToMark = alighting.filter((p) => p.status !== 'alighted');
+  const allOff = alighting.length > 0 && remainingToMark.length === 0;
+
+  function markAllOff() {
+    if (allOff) {
+      // Toggle: bring everyone back to boarded so the driver can correct mistakes.
+      for (const p of alighting) onSet(p.id, { status: 'boarded' });
+    } else {
+      for (const p of remainingToMark) onSet(p.id, { status: 'alighted' });
+    }
+  }
+
   return (
     <section className="rounded-2xl bg-slate-800 p-3">
-      <h2 className="mb-2 text-base font-bold">Alighting here ({alighting.length})</h2>
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <h2 className="text-base font-bold">Alighting here ({alighting.length})</h2>
+        {alighting.length > 1 && (
+          <button
+            type="button"
+            onClick={markAllOff}
+            className={`min-h-touch rounded-xl px-3 py-2 text-sm font-bold ${
+              allOff ? 'bg-slate-700 text-slate-100' : 'bg-emerald-500 text-slate-900'
+            }`}
+          >
+            {allOff ? 'Undo all off' : `✓ Mark all off (${remainingToMark.length})`}
+          </button>
+        )}
+      </div>
       {alighting.length === 0 && <p className="text-sm text-slate-400">No expected alightings.</p>}
       <ul className="flex flex-col gap-2">
         {alighting.map((p) => (
