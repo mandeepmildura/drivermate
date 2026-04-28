@@ -93,17 +93,19 @@ export default function RoutePicker() {
             </button>
           </li>
         ))}
-        <li>
-          <Link to="/cdc" className="btn-secondary block text-left">
-            <div className="flex items-baseline justify-between">
-              <span>CDC V/Line</span>
-              <span className="text-base font-semibold opacity-70">C011 / C012</span>
-            </div>
-            <span className="block text-base font-medium opacity-80">
-              Manifest reader &amp; Form 25
-            </span>
-          </Link>
-        </li>
+        {canDriveVline && (
+          <li>
+            <Link to="/cdc" className="btn-secondary block text-left">
+              <div className="flex items-baseline justify-between">
+                <span>CDC V/Line</span>
+                <span className="text-base font-semibold opacity-70">C011 / C012</span>
+              </div>
+              <span className="block text-base font-medium opacity-80">
+                Manifest reader &amp; Form 25
+              </span>
+            </Link>
+          </li>
+        )}
       </ul>
     </main>
   );

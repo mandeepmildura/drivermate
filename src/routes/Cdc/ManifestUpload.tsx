@@ -4,6 +4,7 @@ import { ALL_STOP_CODES, ROUTES, STOP_NAMES, stopLabel } from '../../lib/cdc/sto
 import { clearRunState, loadRunState, newId, saveRunState } from '../../lib/cdc/state';
 import { stopSummary } from '../../lib/cdc/tally';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
+import { getSupabase } from '../../lib/supabase';
 
 type ImageItem = { id: string; file: File; previewUrl: string; base64: string; mediaType: string };
 
@@ -81,9 +82,17 @@ export default function ManifestUpload() {
     setBusy(true);
     setError(null);
     try {
+      const { data: sessionData } = await getSupabase().auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        throw new Error('Session expired. Please sign in again.');
+      }
       const res = await fetch('/api/vline-ocr', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           routeCode,
           images: images.map((i) => ({ base64: i.base64, mediaType: i.mediaType })),

@@ -4,7 +4,11 @@
 //
 // Why this exists: keeps ANTHROPIC_API_KEY off the client.
 
-type Env = { ANTHROPIC_API_KEY: string };
+type Env = {
+  ANTHROPIC_API_KEY: string;
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
+};
 
 type IncomingImage = { base64: string; mediaType: string };
 type IncomingBody = { routeCode?: string; images?: IncomingImage[] };
@@ -43,11 +47,56 @@ export const onRequestOptions: PagesFunction<Env> = ({ request }) => {
   return new Response(null, { status: 204, headers: corsHeaders(request.headers.get('origin')) });
 };
 
+async function verifyVlineDriver(env: Env, authHeader: string | null): Promise<{ ok: true } | { ok: false; status: number; message: string }> {
+  if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+    return { ok: false, status: 401, message: 'Missing bearer token' };
+  }
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    return { ok: false, status: 500, message: 'Server missing Supabase env vars' };
+  }
+  const token = authHeader.slice(7).trim();
+
+  // Use the user's JWT to query their own driver row. Supabase RLS only lets
+  // them see their own row, so this both validates the token and reads the flag.
+  const url = `${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/drivers?select=can_drive_vline&limit=1`;
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        authorization: `Bearer ${token}`,
+        accept: 'application/json',
+      },
+    });
+  } catch (err) {
+    return { ok: false, status: 502, message: `Auth check failed: ${(err as Error).message}` };
+  }
+  if (resp.status === 401 || resp.status === 403) {
+    return { ok: false, status: 401, message: 'Invalid or expired session' };
+  }
+  if (!resp.ok) {
+    return { ok: false, status: 502, message: `Auth check returned ${resp.status}` };
+  }
+  const rows = (await resp.json()) as Array<{ can_drive_vline?: boolean }>;
+  if (!rows.length) {
+    return { ok: false, status: 403, message: 'No driver row linked to this account' };
+  }
+  if (!rows[0].can_drive_vline) {
+    return { ok: false, status: 403, message: 'V/Line access not enabled for this driver' };
+  }
+  return { ok: true };
+}
+
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const origin = request.headers.get('origin');
 
   if (!env.ANTHROPIC_API_KEY) {
     return jsonResponse({ error: 'Server missing ANTHROPIC_API_KEY' }, 500, origin);
+  }
+
+  const authResult = await verifyVlineDriver(env, request.headers.get('authorization'));
+  if (!authResult.ok) {
+    return jsonResponse({ error: authResult.message }, authResult.status, origin);
   }
 
   let body: IncomingBody;

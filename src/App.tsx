@@ -17,6 +17,7 @@ import { SessionProvider } from './state/SessionProvider';
 import { ShiftSetupProvider } from './state/ShiftSetupProvider';
 import RequireDriver from './state/RequireDriver';
 import RequireAdmin from './state/RequireAdmin';
+import RequireVlineDriver from './state/RequireVlineDriver';
 
 export default function App() {
   useEffect(() => {
@@ -117,7 +118,9 @@ export default function App() {
             path="/cdc/*"
             element={
               <RequireDriver>
-                <Cdc />
+                <RequireVlineDriver>
+                  <Cdc />
+                </RequireVlineDriver>
               </RequireDriver>
             }
           />
