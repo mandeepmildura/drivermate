@@ -241,7 +241,6 @@ export default function ManifestUpload() {
                 type="file"
                 accept="image/*"
                 multiple
-                capture="environment"
                 onChange={(e) => void handleFiles(e.target.files)}
                 className="hidden"
               />
