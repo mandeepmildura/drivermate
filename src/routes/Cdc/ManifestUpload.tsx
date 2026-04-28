@@ -41,6 +41,7 @@ export default function ManifestUpload() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>(existing?.passengers ?? []);
+  const [reviewIndex, setReviewIndex] = useState<number | null>(null);
 
   useEffect(() => {
     localStorage.setItem(ROUTE_KEY, routeCode);
@@ -128,6 +129,7 @@ export default function ManifestUpload() {
         })
         .filter((p): p is Passenger => p !== null);
       setPassengers(next);
+      if (next.length > 0) setReviewIndex(0);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -183,6 +185,51 @@ export default function ManifestUpload() {
 
   const summary = stopSummary(passengers, routeCode);
   const stopOptions = ROUTES[routeCode].stops;
+
+  const activeStops = useMemo(
+    () =>
+      stopOptions.filter((s) =>
+        passengers.some((p) => p.joinStop === s || p.leaveStop === s),
+      ),
+    [stopOptions, passengers],
+  );
+  const reviewing = reviewIndex !== null && activeStops.length > 0;
+  const currentReviewStop = reviewing ? activeStops[Math.min(reviewIndex!, activeStops.length - 1)] : null;
+  const reviewBoarding = currentReviewStop
+    ? passengers.filter((p) => p.joinStop === currentReviewStop)
+    : [];
+  const reviewAlighting = currentReviewStop
+    ? passengers.filter((p) => p.leaveStop === currentReviewStop)
+    : [];
+
+  function nextReview() {
+    if (reviewIndex === null) return;
+    if (reviewIndex >= activeStops.length - 1) {
+      setReviewIndex(null);
+      return;
+    }
+    setReviewIndex(reviewIndex + 1);
+  }
+  function prevReview() {
+    if (reviewIndex === null || reviewIndex === 0) return;
+    setReviewIndex(reviewIndex - 1);
+  }
+  function addBoardingHere(stop: StopCode) {
+    const stops = ROUTES[routeCode].stops;
+    setPassengers((prev) => [
+      ...prev,
+      {
+        id: newId(),
+        seat: '',
+        name: '',
+        joinStop: stop,
+        leaveStop: stops[stops.length - 1],
+        ticketType: 'eTicket',
+        priority: false,
+        status: 'expected',
+      },
+    ]);
+  }
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-4">
@@ -262,7 +309,133 @@ export default function ManifestUpload() {
         {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
       </section>
 
-      {passengers.length > 0 && (
+      {reviewing && currentReviewStop && (
+        <section className="rounded-2xl bg-slate-800 p-3">
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <div>
+              <p className="text-xs uppercase text-slate-400">
+                Review stop {reviewIndex! + 1} of {activeStops.length}
+              </p>
+              <h2 className="text-2xl font-black">{STOP_NAMES[currentReviewStop]}</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReviewIndex(null)}
+              className="text-xs text-slate-400 underline"
+            >
+              Skip review
+            </button>
+          </div>
+
+          <div className="mb-3">
+            <h3 className="mb-1 text-sm font-bold text-emerald-300">
+              Boarding here ({reviewBoarding.length})
+            </h3>
+            {reviewBoarding.length === 0 ? (
+              <p className="text-sm text-slate-500">No-one boarding at {STOP_NAMES[currentReviewStop]}.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {reviewBoarding.map((p) => (
+                  <li key={p.id} className="rounded-lg bg-slate-900 p-2">
+                    <div className="grid grid-cols-[3.5rem,1fr,2rem] gap-2">
+                      <input
+                        type="text"
+                        value={p.seat}
+                        placeholder="Seat"
+                        onChange={(e) => updatePassenger(p.id, { seat: e.target.value.toUpperCase() })}
+                        className="rounded bg-slate-800 px-2 py-1 text-sm font-mono"
+                      />
+                      <input
+                        type="text"
+                        value={p.name}
+                        placeholder="Name"
+                        onChange={(e) => updatePassenger(p.id, { name: e.target.value })}
+                        className="rounded bg-slate-800 px-2 py-1 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePassenger(p.id)}
+                        className="text-red-300"
+                        aria-label="Remove"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                      <select
+                        value={p.leaveStop}
+                        onChange={(e) => updatePassenger(p.id, { leaveStop: e.target.value as StopCode })}
+                        className="rounded bg-slate-800 px-2 py-1"
+                      >
+                        {stopOptions.map((s) => (
+                          <option key={s} value={s}>
+                            → {STOP_NAMES[s]}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={p.ticketType}
+                        onChange={(e) => updatePassenger(p.id, { ticketType: e.target.value as TicketType })}
+                        className="rounded bg-slate-800 px-2 py-1"
+                      >
+                        <option value="eTicket">eTicket</option>
+                        <option value="Paper">Paper</option>
+                      </select>
+                      <label className="flex items-center justify-center gap-1 rounded bg-slate-800 px-2 py-1">
+                        <input
+                          type="checkbox"
+                          checked={p.priority}
+                          onChange={(e) => updatePassenger(p.id, { priority: e.target.checked })}
+                          className="h-4 w-4"
+                        />
+                        Priority
+                      </label>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button
+              type="button"
+              onClick={() => addBoardingHere(currentReviewStop)}
+              className="mt-2 text-sm text-blue-300 underline"
+            >
+              + Add a boarder here
+            </button>
+          </div>
+
+          {reviewAlighting.length > 0 && (
+            <div className="mb-3">
+              <h3 className="mb-1 text-sm font-bold text-amber-300">
+                Alighting here ({reviewAlighting.length})
+              </h3>
+              <ul className="flex flex-col gap-1 text-sm text-slate-300">
+                {reviewAlighting.map((p) => (
+                  <li key={p.id} className="rounded bg-slate-900 px-2 py-1">
+                    <span className="font-mono font-bold">{p.seat || '—'}</span> {p.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={prevReview}
+              disabled={reviewIndex === 0}
+              className="btn-secondary"
+            >
+              ← Back
+            </button>
+            <button type="button" onClick={nextReview} className="btn-primary">
+              {reviewIndex! >= activeStops.length - 1 ? 'Done — to summary' : 'Next stop →'}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {passengers.length > 0 && !reviewing && (
         <section className="rounded-2xl bg-slate-800 p-3">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="text-base font-bold">Passengers ({passengers.length})</h2>
@@ -364,7 +537,7 @@ export default function ManifestUpload() {
         </section>
       )}
 
-      {passengers.length > 0 && (
+      {passengers.length > 0 && !reviewing && (
         <section className="rounded-2xl bg-slate-800 p-3">
           <h2 className="mb-2 text-base font-bold">Pickups / dropoffs by stop</h2>
           <ul className="grid grid-cols-2 gap-1 text-sm sm:grid-cols-3">
@@ -386,14 +559,16 @@ export default function ManifestUpload() {
         </section>
       )}
 
-      <button
-        type="button"
-        onClick={startRun}
-        disabled={passengers.length === 0}
-        className="btn-primary"
-      >
-        {returnTo ? 'Confirm & back to run' : 'Confirm & start run'}
-      </button>
+      {!reviewing && (
+        <button
+          type="button"
+          onClick={startRun}
+          disabled={passengers.length === 0}
+          className="btn-primary"
+        >
+          {returnTo ? 'Confirm & back to run' : 'Confirm & start run'}
+        </button>
+      )}
 
       <details className="rounded-2xl bg-slate-800 p-3 text-sm text-slate-300">
         <summary className="cursor-pointer font-bold">Stops on this route</summary>
