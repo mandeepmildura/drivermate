@@ -18,10 +18,17 @@ export function distanceAlongRouteToIndex(
   stops: RouteStopRow[],
   targetIndex: number,
 ): number | null {
-  const line = buildRouteLine(stops);
-  if (!line) return null;
   const target = stops[targetIndex];
   if (!target || target.lat == null || target.lng == null) return null;
+
+  // Snap on a local prev → target → next window so self-intersecting routes
+  // (e.g. return runs that pass the same intersection twice) don't snap the
+  // target onto the return leg and report the route's full length.
+  const startIdx = Math.max(0, targetIndex - 1);
+  const endIdx = Math.min(stops.length - 1, targetIndex + 1);
+  const window = stops.slice(startIdx, endIdx + 1);
+  const line = buildRouteLine(window);
+  if (!line) return null;
 
   const busPoint = turf.point([busLng, busLat]);
   const targetPoint = turf.point([target.lng, target.lat]);
