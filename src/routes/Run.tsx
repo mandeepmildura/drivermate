@@ -25,7 +25,6 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { haversineMetres, useGeolocation } from '../lib/geo';
 import {
-  distanceAlongRouteToIndex,
   directionFromInstruction,
   hasPassedWaypoint,
 } from '../lib/turfUtils';
@@ -107,17 +106,18 @@ export default function Run() {
   const busLng = geo.kind === 'fix' ? geo.position.lng : null;
   const busHeading = geo.kind === 'fix' ? (geo.position.heading ?? null) : null;
 
-  const distanceToStop =
+  // Geographic distance to the next waypoint. Uses haversine rather than
+  // distance-along-the-route polyline because the polyline is just the
+  // straight lines between waypoints — projecting the bus onto a chord can
+  // land near the target while the bus is still far away on a curved road,
+  // which previously made the audio cue and "in N km" banner fire 1 km
+  // early. Drivers care about geographic proximity to the turn coordinate;
+  // they read the road shape off the map.
+  const distanceDisplay =
     busLat != null && busLng != null && currentStop?.lat != null && currentStop?.lng != null
       ? haversineMetres(busLat, busLng, currentStop.lat, currentStop.lng)
       : null;
-
-  const distanceAlongRoute =
-    busLat != null && busLng != null && currentIndex < stops.length
-      ? distanceAlongRouteToIndex(busLat, busLng, stops, currentIndex)
-      : null;
-
-  const distanceDisplay = distanceAlongRoute ?? distanceToStop;
+  const distanceToStop = distanceDisplay;
 
   const passedCurrentStop =
     busLat != null && busLng != null && currentIndex < stops.length
@@ -261,7 +261,10 @@ export default function Run() {
       synced_at: null,
     });
     audioSpokenForRef.current = null;
-    setCurrentCount(0);
+    // Only clear the +/- pre-count after a real STOP. If the driver was
+    // pre-counting boarders for an upcoming stop and a turn auto-advanced
+    // mid-count, wiping currentCount would silently throw the count away.
+    if (!isTurn) setCurrentCount(0);
     if (audioUnlocked && !muted) {
       const utterance = isTurn
         ? 'Turn complete.'
