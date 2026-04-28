@@ -21,8 +21,8 @@ export const STOP_NAMES: Record<StopCode, string> = {
 };
 
 export const ROUTES: Record<RouteCode, { label: string; stops: StopCode[] }> = {
-  C012: {
-    label: 'C012 Bendigo → Mildura',
+  C011: {
+    label: 'C011 Bendigo → Mildura',
     stops: [
       'BXG',
       'SPE',
@@ -43,8 +43,8 @@ export const ROUTES: Record<RouteCode, { label: string; stops: StopCode[] }> = {
       'MQL',
     ],
   },
-  C011: {
-    label: 'C011 Mildura → Bendigo',
+  C012: {
+    label: 'C012 Mildura → Bendigo',
     stops: [
       'MQL',
       'EUS',
