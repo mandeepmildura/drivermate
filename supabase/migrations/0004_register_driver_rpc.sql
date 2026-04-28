@@ -1,5 +1,5 @@
 -- Register driver: link the currently signed-in auth user to the
--- pre-created drivermate.drivers row matching the given driver_number.
+-- pre-created drivers row matching the given driver_number.
 --
 -- Called from the client during first-time PIN setup (registerDriver in
 -- src/lib/auth.ts) immediately after supabase.auth.signUp + signIn. The
@@ -11,7 +11,7 @@
 -- The auth_user_id IS NULL guard ensures the function can only claim a
 -- row that has not yet been linked to any auth user.
 
-CREATE OR REPLACE FUNCTION drivermate.register_driver(p_driver_number text)
+CREATE OR REPLACE FUNCTION public.register_driver(p_driver_number text)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -25,7 +25,7 @@ BEGIN
     RAISE EXCEPTION 'Not signed in';
   END IF;
 
-  UPDATE drivermate.drivers
+  UPDATE public.drivers
   SET auth_user_id = v_uid
   WHERE driver_number = p_driver_number
     AND auth_user_id IS NULL;
@@ -39,4 +39,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION drivermate.register_driver(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.register_driver(text) TO authenticated;
