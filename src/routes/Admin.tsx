@@ -32,6 +32,9 @@ export default function Admin() {
           <Link to="/admin/drivers" className="rounded-full bg-slate-700 px-5 py-2 text-sm text-slate-200 hover:bg-slate-600">
             Drivers
           </Link>
+          <Link to="/admin/replay" className="rounded-full bg-slate-700 px-5 py-2 text-sm text-slate-200 hover:bg-slate-600">
+            Replay
+          </Link>
           <Link to="/admin/new" className="btn-primary w-auto px-5">
             + New route
           </Link>

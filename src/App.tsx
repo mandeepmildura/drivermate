@@ -9,6 +9,7 @@ import EndOfRun from './routes/EndOfRun';
 import Admin from './routes/Admin';
 import AdminRouteEditor from './routes/AdminRouteEditor';
 import AdminDrivers from './routes/AdminDrivers';
+import AdminReplay from './routes/AdminReplay';
 import { startSyncLoop } from './lib/sync';
 import { startErrorReporter } from './lib/errorReporter';
 import { SessionProvider } from './state/SessionProvider';
@@ -87,6 +88,16 @@ export default function App() {
               <RequireDriver>
                 <RequireAdmin>
                   <AdminRouteEditor />
+                </RequireAdmin>
+              </RequireDriver>
+            }
+          />
+          <Route
+            path="/admin/replay"
+            element={
+              <RequireDriver>
+                <RequireAdmin>
+                  <AdminReplay />
                 </RequireAdmin>
               </RequireDriver>
             }

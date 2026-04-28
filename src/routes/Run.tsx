@@ -31,13 +31,15 @@ import {
 import RouteMap from '../components/RouteMap';
 import { RouteSimulator } from '../components/RouteSimulator';
 import { SyncHealthBanner } from '../components/SyncHealthBanner';
+import {
+  AUDIO_TRIGGER_M,
+  ARRIVED_DISTANCE_M,
+  ARRIVAL_DWELL_MS_STOP,
+  ARRIVAL_DWELL_MS_TURN,
+  BREADCRUMB_INTERVAL_MS,
+} from '../lib/runConfig';
 
-const AUDIO_TRIGGER_M = 150;
 const APPROACHING_DISTANCE_M = 200;
-const ARRIVED_DISTANCE_M = 50;
-const ARRIVAL_DWELL_MS_STOP = 8_000;
-const ARRIVAL_DWELL_MS_TURN = 0;
-const BREADCRUMB_INTERVAL_MS = 5_000;
 const GEO_PREF_KEY = 'drivermate.gpsAutoAdvance';
 
 function useNow(intervalMs = 1000): Date {
