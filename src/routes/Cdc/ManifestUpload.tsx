@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ALL_STOP_CODES, ROUTES, STOP_NAMES, stopLabel } from '../../lib/cdc/stops';
 import { clearRunState, loadRunState, newId, saveRunState } from '../../lib/cdc/state';
 import { stopSummary } from '../../lib/cdc/tally';
@@ -27,8 +27,12 @@ async function fileToBase64(file: File): Promise<{ base64: string; mediaType: st
 
 export default function ManifestUpload() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('return');
+  const routeQuery = searchParams.get('route');
   const existing = useMemo(loadRunState, []);
   const [routeCode, setRouteCode] = useState<RouteCode>(() => {
+    if (routeQuery === 'C011' || routeQuery === 'C012') return routeQuery;
     if (existing) return existing.routeCode;
     const last = localStorage.getItem(ROUTE_KEY);
     return last === 'C011' || last === 'C012' ? last : 'C012';
@@ -168,7 +172,7 @@ export default function ManifestUpload() {
       currentStopIndex: 0,
       stopArrivals: {},
     });
-    navigate('/cdc/run');
+    navigate(returnTo || '/cdc/run');
   }
 
   function discardExisting() {
@@ -389,7 +393,7 @@ export default function ManifestUpload() {
         disabled={passengers.length === 0}
         className="btn-primary"
       >
-        Confirm &amp; start run
+        {returnTo ? 'Confirm &amp; back to run' : 'Confirm &amp; start run'}
       </button>
 
       <details className="rounded-2xl bg-slate-800 p-3 text-sm text-slate-300">

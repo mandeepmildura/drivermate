@@ -107,7 +107,7 @@ export default function Form25() {
   function finishTrip() {
     if (!confirm('Finish trip and clear saved state?')) return;
     clearRunState();
-    navigate('/cdc/manifest', { replace: true });
+    navigate('/routes', { replace: true });
   }
 
   const totalBoardings = totalServiceBoardings(state.passengers);

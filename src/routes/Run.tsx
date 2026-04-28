@@ -31,6 +31,7 @@ import {
 import RouteMap from '../components/RouteMap';
 import { RouteSimulator } from '../components/RouteSimulator';
 import { SyncHealthBanner } from '../components/SyncHealthBanner';
+import VlinePanel from './Cdc/VlinePanel';
 import {
   AUDIO_TRIGGER_M,
   ARRIVED_DISTANCE_M,
@@ -280,7 +281,11 @@ export default function Run() {
     setEnding(true);
     cancelSpeech();
     await recordShift({ ...shift, ended_at: new Date().toISOString() });
-    navigate('/run/end');
+    if (routeRow?.service_type === 'vline') {
+      navigate('/cdc/form25');
+    } else {
+      navigate('/run/end');
+    }
   }
 
   // GPS status badge
@@ -464,34 +469,41 @@ export default function Run() {
         />
       </div>
 
-      {/* ── Passenger counter bottom bar ────────────────────────────────── */}
-      <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-slate-900 border-t border-slate-700">
-        <button
-          type="button"
-          onClick={() => setCurrentCount((c) => Math.max(0, c - 1))}
-          aria-label="Remove one"
-          className="w-16 h-16 rounded-2xl bg-slate-700 text-3xl font-bold text-slate-100 active:bg-slate-600 select-none"
-        >
-          −
-        </button>
+      {/* ── Bottom panel: V/Line manifest panel for V/Line routes, +/- counter for school ── */}
+      {routeRow?.service_type === 'vline' ? (
+        <VlinePanel
+          routeNumber={routeRow.route_number}
+          currentStopName={currentStop?.stop_name ?? null}
+        />
+      ) : (
+        <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-slate-900 border-t border-slate-700">
+          <button
+            type="button"
+            onClick={() => setCurrentCount((c) => Math.max(0, c - 1))}
+            aria-label="Remove one"
+            className="w-16 h-16 rounded-2xl bg-slate-700 text-3xl font-bold text-slate-100 active:bg-slate-600 select-none"
+          >
+            −
+          </button>
 
-        <div className="flex-1 text-center">
-          <p className="text-xs uppercase tracking-widest text-slate-400">On bus</p>
-          <p className="text-5xl font-bold tabular-nums leading-none">{displayTotal}</p>
-          {currentCount > 0 && (
-            <p className="text-xs text-slate-400 mt-0.5">+{currentCount} this stop</p>
-          )}
+          <div className="flex-1 text-center">
+            <p className="text-xs uppercase tracking-widest text-slate-400">On bus</p>
+            <p className="text-5xl font-bold tabular-nums leading-none">{displayTotal}</p>
+            {currentCount > 0 && (
+              <p className="text-xs text-slate-400 mt-0.5">+{currentCount} this stop</p>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setCurrentCount((c) => c + 1)}
+            aria-label="Add one"
+            className="w-20 h-20 rounded-2xl bg-blue-500 text-4xl font-bold text-white active:bg-blue-400 select-none"
+          >
+            +
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setCurrentCount((c) => c + 1)}
-          aria-label="Add one"
-          className="w-20 h-20 rounded-2xl bg-blue-500 text-4xl font-bold text-white active:bg-blue-400 select-none"
-        >
-          +
-        </button>
-      </div>
+      )}
 
       <RouteSimulator stops={stops} />
     </main>

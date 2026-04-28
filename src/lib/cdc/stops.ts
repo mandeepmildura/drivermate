@@ -72,3 +72,27 @@ export const ALL_STOP_CODES: StopCode[] = Object.keys(STOP_NAMES) as StopCode[];
 export function stopLabel(code: StopCode): string {
   return `${code} ${STOP_NAMES[code]}`;
 }
+
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/t\/o|turn[- ]?off/g, '').replace(/[^a-z]/g, '');
+}
+
+const NAME_TO_CODE: Record<string, StopCode> = (() => {
+  const m: Record<string, StopCode> = {};
+  for (const [code, name] of Object.entries(STOP_NAMES) as [StopCode, string][]) {
+    m[normalize(name)] = code;
+    m[normalize(code)] = code;
+  }
+  return m;
+})();
+
+export function stopCodeFromName(stopName: string | null | undefined): StopCode | null {
+  if (!stopName) return null;
+  const direct = NAME_TO_CODE[normalize(stopName)];
+  if (direct) return direct;
+  const norm = normalize(stopName);
+  for (const code of ALL_STOP_CODES) {
+    if (norm.includes(normalize(STOP_NAMES[code]))) return code;
+  }
+  return null;
+}
