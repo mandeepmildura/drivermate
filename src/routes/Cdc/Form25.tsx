@@ -112,7 +112,7 @@ export default function Form25() {
 
   const totalBoardings = totalServiceBoardings(state.passengers);
   const stops = ROUTES[state.routeCode].stops;
-  const mailto = `mailto:CoachPatronage@vline.com.au?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+  const mailto = `mailto:CoachPatronage@vline.com.au?cc=${encodeURIComponent('mandeep@freshoz.com')}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-3 p-4">
