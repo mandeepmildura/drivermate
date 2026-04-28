@@ -5,6 +5,7 @@ import { clearRunState, loadRunState, newId, saveRunState } from '../../lib/cdc/
 import { stopSummary } from '../../lib/cdc/tally';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
 import { getSupabase } from '../../lib/supabase';
+import { CountBadge, SeatPill } from './ui';
 
 type ImageItem = { id: string; file: File; previewUrl: string; base64: string; mediaType: string };
 
@@ -310,62 +311,68 @@ export default function ManifestUpload() {
       </section>
 
       {reviewing && currentReviewStop && (
-        <section className="rounded-2xl bg-slate-800 p-3">
-          <div className="mb-2 flex items-baseline justify-between gap-2">
+        <section className="rounded-2xl bg-slate-800 p-4">
+          <div className="mb-4 flex items-baseline justify-between gap-2">
             <div>
-              <p className="text-xs uppercase text-slate-400">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                 Review stop {reviewIndex! + 1} of {activeStops.length}
               </p>
-              <h2 className="text-2xl font-black">{STOP_NAMES[currentReviewStop]}</h2>
+              <h2 className="text-3xl font-black leading-tight">{STOP_NAMES[currentReviewStop]}</h2>
             </div>
             <button
               type="button"
               onClick={() => setReviewIndex(null)}
-              className="text-xs text-slate-400 underline"
+              className="text-xs font-bold text-slate-400 active:text-slate-200"
             >
               Skip review
             </button>
           </div>
 
-          <div className="mb-3">
-            <h3 className="mb-1 text-sm font-bold text-emerald-300">
-              Boarding here ({reviewBoarding.length})
+          <div className="mb-4">
+            <h3 className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-emerald-300">
+              Boarding here <CountBadge n={reviewBoarding.length} tone="emerald" />
             </h3>
             {reviewBoarding.length === 0 ? (
-              <p className="text-sm text-slate-500">No-one boarding at {STOP_NAMES[currentReviewStop]}.</p>
+              <p className="text-sm text-slate-500">
+                No-one boarding at {STOP_NAMES[currentReviewStop]}.
+              </p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {reviewBoarding.map((p) => (
-                  <li key={p.id} className="rounded-lg bg-slate-900 p-2">
-                    <div className="grid grid-cols-[3.5rem,1fr,2rem] gap-2">
+                  <li key={p.id} className="rounded-xl bg-slate-900 p-3">
+                    <div className="flex items-center gap-2">
                       <input
                         type="text"
                         value={p.seat}
                         placeholder="Seat"
-                        onChange={(e) => updatePassenger(p.id, { seat: e.target.value.toUpperCase() })}
-                        className="rounded bg-slate-800 px-2 py-1 text-sm font-mono"
+                        onChange={(e) =>
+                          updatePassenger(p.id, { seat: e.target.value.toUpperCase() })
+                        }
+                        className="h-9 w-16 rounded-lg bg-slate-800 px-2 text-center font-mono text-sm font-bold text-emerald-300"
                       />
                       <input
                         type="text"
                         value={p.name}
                         placeholder="Name"
                         onChange={(e) => updatePassenger(p.id, { name: e.target.value })}
-                        className="rounded bg-slate-800 px-2 py-1 text-sm"
+                        className="h-9 flex-1 rounded-lg bg-slate-800 px-3 text-sm font-bold text-slate-100"
                       />
                       <button
                         type="button"
                         onClick={() => removePassenger(p.id)}
-                        className="text-red-300"
-                        aria-label="Remove"
+                        className="h-9 w-9 shrink-0 rounded-lg bg-slate-800 text-red-300 active:bg-slate-700"
+                        aria-label="Remove passenger"
                       >
                         ×
                       </button>
                     </div>
-                    <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                    <div className="mt-2 grid grid-cols-2 gap-2">
                       <select
                         value={p.leaveStop}
-                        onChange={(e) => updatePassenger(p.id, { leaveStop: e.target.value as StopCode })}
-                        className="rounded bg-slate-800 px-2 py-1"
+                        onChange={(e) =>
+                          updatePassenger(p.id, { leaveStop: e.target.value as StopCode })
+                        }
+                        className="h-9 rounded-lg bg-slate-800 px-2 text-xs"
                       >
                         {stopOptions.map((s) => (
                           <option key={s} value={s}>
@@ -375,22 +382,24 @@ export default function ManifestUpload() {
                       </select>
                       <select
                         value={p.ticketType}
-                        onChange={(e) => updatePassenger(p.id, { ticketType: e.target.value as TicketType })}
-                        className="rounded bg-slate-800 px-2 py-1"
+                        onChange={(e) =>
+                          updatePassenger(p.id, { ticketType: e.target.value as TicketType })
+                        }
+                        className="h-9 rounded-lg bg-slate-800 px-2 text-xs"
                       >
                         <option value="eTicket">eTicket</option>
                         <option value="Paper">Paper</option>
                       </select>
-                      <label className="flex items-center justify-center gap-1 rounded bg-slate-800 px-2 py-1">
-                        <input
-                          type="checkbox"
-                          checked={p.priority}
-                          onChange={(e) => updatePassenger(p.id, { priority: e.target.checked })}
-                          className="h-4 w-4"
-                        />
-                        Priority
-                      </label>
                     </div>
+                    <label className="mt-2 flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold">
+                      <input
+                        type="checkbox"
+                        checked={p.priority}
+                        onChange={(e) => updatePassenger(p.id, { priority: e.target.checked })}
+                        className="h-4 w-4 accent-amber-400"
+                      />
+                      Priority boarding
+                    </label>
                   </li>
                 ))}
               </ul>
@@ -398,21 +407,25 @@ export default function ManifestUpload() {
             <button
               type="button"
               onClick={() => addBoardingHere(currentReviewStop)}
-              className="mt-2 text-sm text-blue-300 underline"
+              className="mt-3 text-sm font-bold text-blue-300 active:text-blue-200"
             >
               + Add a boarder here
             </button>
           </div>
 
           {reviewAlighting.length > 0 && (
-            <div className="mb-3">
-              <h3 className="mb-1 text-sm font-bold text-amber-300">
-                Alighting here ({reviewAlighting.length})
+            <div className="mb-4">
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-300">
+                Alighting here <CountBadge n={reviewAlighting.length} tone="amber" />
               </h3>
-              <ul className="flex flex-col gap-1 text-sm text-slate-300">
+              <ul className="flex flex-col gap-2">
                 {reviewAlighting.map((p) => (
-                  <li key={p.id} className="rounded bg-slate-900 px-2 py-1">
-                    <span className="font-mono font-bold">{p.seat || '—'}</span> {p.name}
+                  <li
+                    key={p.id}
+                    className="flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2"
+                  >
+                    <SeatPill seat={p.seat} />
+                    <span className="truncate text-sm font-bold text-slate-100">{p.name}</span>
                   </li>
                 ))}
               </ul>

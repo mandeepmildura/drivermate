@@ -114,94 +114,131 @@ export default function Form25() {
   const stops = ROUTES[state.routeCode].stops;
   const mailto = `mailto:mandeep@freshoz.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 
+  const arrivalOptions: { key: ArrivalStatus; label: string; tint: string; selected: string }[] = [
+    {
+      key: 'early',
+      label: 'Early',
+      tint: 'bg-blue-500/10 text-blue-300',
+      selected: 'bg-blue-500 text-white',
+    },
+    {
+      key: 'ontime',
+      label: 'On time',
+      tint: 'bg-emerald-500/10 text-emerald-300',
+      selected: 'bg-emerald-500 text-slate-900',
+    },
+    {
+      key: 'late',
+      label: 'Late',
+      tint: 'bg-red-500/10 text-red-300',
+      selected: 'bg-red-600 text-white',
+    },
+  ];
+
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-3 p-4">
       <header className="flex items-baseline justify-between">
-        <h1 className="text-xl font-black">Form 25</h1>
+        <h1 className="text-2xl font-black">Form 25</h1>
         <Link to="/cdc/run" className="text-sm text-blue-400 underline-offset-4 hover:underline">
           ← Run sheet
         </Link>
       </header>
 
-      <section className="rounded-2xl bg-slate-800 p-3">
-        <div className="mb-2 flex items-baseline justify-between">
+      <section className="rounded-2xl bg-slate-800 p-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-xs uppercase text-slate-400">Route</div>
-            <div className="text-lg font-bold">{ROUTES[state.routeCode].label}</div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Route</div>
+            <div className="mt-0.5 text-base font-bold leading-tight">
+              {ROUTES[state.routeCode].label}
+            </div>
           </div>
           <div className="text-right">
-            <div className="text-xs uppercase text-slate-400">Service boardings</div>
-            <div className="text-3xl font-black text-emerald-400">{totalBoardings}</div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Boardings</div>
+            <div className="text-3xl font-black tabular-nums text-emerald-400">
+              {totalBoardings}
+            </div>
           </div>
         </div>
+      </section>
 
+      <section className="rounded-2xl bg-slate-800 p-4">
         <label className="block">
-          <span className="text-sm text-slate-300">Week ending</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            Week ending
+          </span>
           <input
             type="date"
             value={form.weekEnding}
             onChange={(e) => patchForm({ weekEnding: e.target.value })}
-            className="mt-1 w-full rounded bg-slate-900 px-3 py-2 text-base"
+            className="mt-1.5 w-full rounded-lg bg-slate-900 px-3 py-2 text-base"
           />
         </label>
 
-        <label className="mt-3 block">
-          <span className="text-sm text-slate-300">
+        <label className="mt-4 block">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
             Total back up boardings
-            <span className="ml-1 text-xs text-slate-500">(passengers redirected from rail to coach)</span>
+          </span>
+          <span className="block text-xs text-slate-500">
+            (passengers redirected from rail to coach)
           </span>
           <input
             type="number"
             min={0}
             value={form.backupBoardings}
-            onChange={(e) => patchForm({ backupBoardings: Math.max(0, Number(e.target.value) || 0) })}
-            className="mt-1 w-full rounded bg-slate-900 px-3 py-2 text-base"
+            onChange={(e) =>
+              patchForm({ backupBoardings: Math.max(0, Number(e.target.value) || 0) })
+            }
+            className="mt-1.5 w-full rounded-lg bg-slate-900 px-3 py-2 text-base"
           />
         </label>
       </section>
 
-      <section className="rounded-2xl bg-slate-800 p-3">
-        <div className="mb-2 text-sm font-bold uppercase text-slate-400">Arrival</div>
+      <section className="rounded-2xl bg-slate-800 p-4">
+        <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          Arrival
+        </div>
         <div className="grid grid-cols-3 gap-2">
-          {(['early', 'ontime', 'late'] as ArrivalStatus[]).map((opt) => (
+          {arrivalOptions.map((opt) => (
             <button
-              key={opt}
+              key={opt.key}
               type="button"
-              onClick={() => patchForm({ arrival: opt })}
-              className={`min-h-touch rounded-xl px-3 py-2 text-base font-bold ${
-                form.arrival === opt
-                  ? opt === 'late'
-                    ? 'bg-red-600 text-white'
-                    : opt === 'early'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-emerald-500 text-slate-900'
-                  : 'bg-slate-700 text-slate-100'
+              onClick={() => patchForm({ arrival: opt.key })}
+              className={`min-h-touch rounded-xl px-3 py-2 text-base font-bold transition-colors ${
+                form.arrival === opt.key ? opt.selected : opt.tint
               }`}
             >
-              {opt === 'ontime' ? 'On time' : opt === 'late' ? 'Late' : 'Early'}
+              {opt.label}
             </button>
           ))}
         </div>
 
         {form.arrival === 'late' && (
           <label className="mt-3 block">
-            <span className="text-sm text-slate-300">Minutes late</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Minutes late
+            </span>
             <input
               type="number"
               min={0}
               value={form.lateMins}
               onChange={(e) => patchForm({ lateMins: Math.max(0, Number(e.target.value) || 0) })}
-              className="mt-1 w-full rounded bg-slate-900 px-3 py-2 text-base"
+              className="mt-1.5 w-full rounded-lg bg-slate-900 px-3 py-2 text-base"
             />
           </label>
         )}
       </section>
 
       {form.arrival === 'late' && (
-        <section className="rounded-2xl bg-slate-800 p-3">
-          <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-sm font-bold uppercase text-slate-400">Timekeeping entries</h2>
-            <button type="button" onClick={addEntry} className="text-sm text-blue-300 underline">
+        <section className="rounded-2xl bg-slate-800 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Timekeeping entries
+            </h2>
+            <button
+              type="button"
+              onClick={addEntry}
+              className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300 active:bg-emerald-500/25"
+            >
               + Add
             </button>
           </div>
@@ -210,18 +247,18 @@ export default function Form25() {
           )}
           <ul className="flex flex-col gap-2">
             {form.entries.map((e) => (
-              <li key={e.id} className="rounded-xl bg-slate-900 p-2">
+              <li key={e.id} className="rounded-xl bg-slate-900 p-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="text-xs">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     Date
                     <input
                       type="date"
                       value={e.date}
                       onChange={(ev) => patchEntry(e.id, { date: ev.target.value })}
-                      className="mt-1 w-full rounded bg-slate-800 px-2 py-1 text-sm"
+                      className="mt-1 w-full rounded-lg bg-slate-800 px-2 py-1 text-sm font-normal normal-case tracking-normal text-slate-100"
                     />
                   </label>
-                  <label className="text-xs">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     Mins late
                     <input
                       type="number"
@@ -230,24 +267,24 @@ export default function Form25() {
                       onChange={(ev) =>
                         patchEntry(e.id, { minsLate: Math.max(0, Number(ev.target.value) || 0) })
                       }
-                      className="mt-1 w-full rounded bg-slate-800 px-2 py-1 text-sm"
+                      className="mt-1 w-full rounded-lg bg-slate-800 px-2 py-1 text-sm font-normal normal-case tracking-normal text-slate-100"
                     />
                   </label>
-                  <label className="text-xs">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     Time recorded
                     <input
                       type="time"
                       value={e.timeRecorded}
                       onChange={(ev) => patchEntry(e.id, { timeRecorded: ev.target.value })}
-                      className="mt-1 w-full rounded bg-slate-800 px-2 py-1 text-sm"
+                      className="mt-1 w-full rounded-lg bg-slate-800 px-2 py-1 text-sm font-normal normal-case tracking-normal text-slate-100"
                     />
                   </label>
-                  <label className="text-xs">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     Location
                     <select
                       value={e.location}
                       onChange={(ev) => patchEntry(e.id, { location: ev.target.value as StopCode })}
-                      className="mt-1 w-full rounded bg-slate-800 px-2 py-1 text-sm"
+                      className="mt-1 w-full rounded-lg bg-slate-800 px-2 py-1 text-sm font-normal normal-case tracking-normal text-slate-100"
                     >
                       {stops.map((s) => (
                         <option key={s} value={s}>
@@ -256,14 +293,14 @@ export default function Form25() {
                       ))}
                     </select>
                   </label>
-                  <label className="col-span-2 text-xs">
+                  <label className="col-span-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     Reason
                     <select
                       value={e.reasonCode}
                       onChange={(ev) =>
                         patchEntry(e.id, { reasonCode: Number(ev.target.value) as ReasonCode })
                       }
-                      className="mt-1 w-full rounded bg-slate-800 px-2 py-1 text-sm"
+                      className="mt-1 w-full rounded-lg bg-slate-800 px-2 py-1 text-sm font-normal normal-case tracking-normal text-slate-100"
                     >
                       {(Object.keys(REASON_LABELS) as Array<`${ReasonCode}`>).map((k) => {
                         const code = Number(k) as ReasonCode;
@@ -279,7 +316,7 @@ export default function Form25() {
                 <button
                   type="button"
                   onClick={() => removeEntry(e.id)}
-                  className="mt-2 text-xs text-red-300 underline"
+                  className="mt-2 text-xs font-bold text-red-300 active:text-red-200"
                 >
                   Remove entry
                 </button>
@@ -289,12 +326,18 @@ export default function Form25() {
         </section>
       )}
 
-      <section className="rounded-2xl bg-slate-800 p-3">
-        <h2 className="mb-2 text-sm font-bold uppercase text-slate-400">Email preview</h2>
-        <pre className="overflow-x-auto whitespace-pre rounded bg-slate-900 p-3 font-mono text-xs text-slate-200">
+      <section className="rounded-2xl bg-slate-800 p-4">
+        <h2 className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          Email preview
+        </h2>
+        <pre className="overflow-x-auto whitespace-pre rounded-lg bg-slate-900 p-3 font-mono text-xs leading-relaxed text-slate-200">
 {emailBody}
         </pre>
-        <button type="button" onClick={() => void copyToClipboard()} className="btn-primary mt-3">
+        <button
+          type="button"
+          onClick={() => void copyToClipboard()}
+          className="btn-primary mt-3"
+        >
           {copied ? 'Copied ✓' : 'Copy to clipboard'}
         </button>
         <a
@@ -305,8 +348,12 @@ export default function Form25() {
         </a>
       </section>
 
-      <button type="button" onClick={finishTrip} className="btn-secondary">
-        Finish trip &amp; clear
+      <button
+        type="button"
+        onClick={finishTrip}
+        className="self-center px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-500 active:text-slate-300"
+      >
+        Finish trip & clear
       </button>
     </main>
   );

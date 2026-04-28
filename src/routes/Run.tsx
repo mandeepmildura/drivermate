@@ -343,12 +343,16 @@ export default function Run() {
   return (
     <main className="flex h-full flex-col bg-slate-900 overflow-hidden">
       {/* ── Status bar ─────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex items-center justify-between gap-2 px-3 py-1.5 text-xs text-slate-400 border-b border-slate-800">
+      <div className="shrink-0 flex items-center justify-between gap-2 bg-slate-950 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
         <div className="flex items-center gap-2">
-          <span>{formatElapsed(shift.started_at, now)}</span>
+          <span className="font-mono normal-case tracking-normal">{formatElapsed(shift.started_at, now)}</span>
           <span
-            className={`rounded-full px-2 py-0.5 uppercase tracking-widest ${
-              online ? 'text-emerald-400' : 'text-amber-400'
+            className={`rounded-full px-2 py-0.5 ${
+              online
+                ? pending
+                  ? 'bg-amber-500/15 text-amber-300'
+                  : 'bg-emerald-500/15 text-emerald-300'
+                : 'bg-amber-500/15 text-amber-300'
             }`}
           >
             {online ? (pending ? `Sync: ${pending}` : 'Online') : 'Offline'}
@@ -356,7 +360,7 @@ export default function Run() {
           <button
             type="button"
             onClick={toggleGps}
-            className={`rounded-full px-2 py-0.5 uppercase tracking-widest ${gpsBadge.cls}`}
+            className={`rounded-full px-2 py-0.5 ${gpsBadge.cls}`}
           >
             {gpsBadge.label}
           </button>
@@ -366,7 +370,7 @@ export default function Run() {
             <button
               type="button"
               onClick={toggleMute}
-              className="rounded-full border border-slate-700 px-2 py-0.5 uppercase tracking-widest"
+              className="rounded-full bg-slate-800 px-2 py-0.5"
             >
               {muted ? 'Muted' : 'Audio on'}
             </button>
@@ -375,7 +379,7 @@ export default function Run() {
             type="button"
             onClick={endRun}
             disabled={ending}
-            className="rounded-full bg-slate-700 px-3 py-0.5 font-semibold text-slate-200 active:bg-slate-600 disabled:opacity-50"
+            className="rounded-full bg-slate-700 px-3 py-0.5 text-slate-200 active:bg-slate-600 disabled:opacity-50"
           >
             {ending ? 'Ending…' : 'End run'}
           </button>
@@ -398,52 +402,56 @@ export default function Run() {
 
       {/* ── Next turn banner ────────────────────────────────────────────── */}
       {currentStop ? (
-        <div className={`shrink-0 flex items-center gap-3 px-4 py-3 border-b border-slate-700 ${bandClass(nextStopStatus)}`}>
+        <div className={`shrink-0 flex items-center gap-3 px-4 py-3 ${bandClass(nextStopStatus)}`}>
           {currentStop.kind === 'turn' && (
             <span className="text-4xl leading-none font-bold">{turnArrow}</span>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-xl font-bold leading-tight truncate">
               {currentStop.instruction_text || currentStop.stop_name}
             </p>
             {distanceDisplay != null && (
-              <p className="text-sm opacity-70">in {formatDistance(distanceDisplay)}</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest opacity-70">
+                in {formatDistance(distanceDisplay)}
+              </p>
             )}
           </div>
+          {nextStopStatus !== 'ontime' && (
+            <span
+              className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${
+                nextStopStatus === 'late'
+                  ? 'bg-red-500/30 text-red-100'
+                  : 'bg-amber-500/30 text-amber-100'
+              }`}
+            >
+              {nextStopStatus === 'late' ? 'Late' : 'Delayed'}
+            </span>
+          )}
         </div>
       ) : (
-        <div className="shrink-0 px-4 py-3 border-b border-slate-700 text-slate-400 text-sm">
+        <div className="shrink-0 px-4 py-3 text-slate-400 text-sm">
           {done ? 'All stops complete — tap End run.' : 'No stops loaded for this route.'}
         </div>
       )}
 
       {/* ── Next scheduled stop strip ──────────────────────────────────── */}
       {nextScheduledStop && nextScheduledStop !== currentStop && (
-        <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-slate-800/60 border-b border-slate-700 text-sm">
-          <span className="text-slate-300 truncate">
-            Next stop:{' '}
-            <span className="font-semibold text-white">{nextScheduledStop.stop_name}</span>
+        <div className="shrink-0 flex items-center justify-between gap-3 bg-slate-800 px-4 py-2 text-xs">
+          <span className="min-w-0 truncate">
+            <span className="font-bold uppercase tracking-widest text-slate-400">Next stop </span>
+            <span className="font-bold text-slate-100">{nextScheduledStop.stop_name}</span>
             {nextScheduledStop.scheduled_time && (
-              <span className="ml-2 text-slate-400">{nextScheduledStop.scheduled_time.slice(0, 5)}</span>
+              <span className="ml-2 font-mono text-slate-400">
+                {nextScheduledStop.scheduled_time.slice(0, 5)}
+              </span>
             )}
-          </span>
-          <span
-            className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-widest ${
-              nextStopStatus === 'late'
-                ? 'bg-red-500/20 text-red-300'
-                : nextStopStatus === 'delayed'
-                  ? 'bg-amber-500/20 text-amber-300'
-                  : 'bg-emerald-500/20 text-emerald-300'
-            }`}
-          >
-            {nextStopStatus === 'late' ? 'Late' : nextStopStatus === 'delayed' ? 'Delayed' : 'On time'}
           </span>
         </div>
       )}
 
       {/* ── Proximity banner (floating over map top) ───────────────────── */}
       {proximityBanner && (
-        <div className={`shrink-0 flex items-center justify-between px-4 py-2 text-sm font-semibold border-b border-slate-700 ${proximityBanner.cls}`}>
+        <div className={`shrink-0 flex items-center justify-between px-4 py-2 text-sm font-semibold ${proximityBanner.cls}`}>
           <span>{proximityBanner.label}</span>
           {proximityBanner.showManual && (
             <button
