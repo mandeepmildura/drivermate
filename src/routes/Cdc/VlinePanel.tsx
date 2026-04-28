@@ -11,13 +11,13 @@ type Props = {
 };
 
 function inferRouteCode(routeNumber: string): RouteCode {
-  // routeNumber may be "C011", "C012", "C012-SAT", "C012-SUN", "C011 Bendigo to Mildura" etc.
   return routeNumber.toUpperCase().includes('C011') ? 'C011' : 'C012';
 }
 
 export default function VlinePanel({ routeNumber, currentStopName }: Props) {
   const navigate = useNavigate();
   const [state, setState] = useState<RunState | null>(() => loadRunState());
+  const [expanded, setExpanded] = useState(false);
   const [walkOpen, setWalkOpen] = useState(false);
   const [walkName, setWalkName] = useState('');
 
@@ -30,30 +30,19 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
   const stops = ROUTES[expectedRouteCode].stops;
   const [walkDest, setWalkDest] = useState<StopCode>(stops[stops.length - 1]);
 
-  // Manifest doesn't match current route → treat as missing.
   const manifestMatches = !!state && state.routeCode === expectedRouteCode;
 
+  // ── No manifest: thin nag strip, never expands. Tap to read manifest. ──
   if (!manifestMatches) {
     return (
-      <div className="shrink-0 border-t border-slate-700 bg-slate-900 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold uppercase text-slate-400">V/Line manifest</p>
-            <p className="text-sm text-slate-300">
-              {state
-                ? `Saved manifest is for ${state.routeCode}, but this run is ${expectedRouteCode}.`
-                : 'No manifest loaded yet.'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(`/cdc/manifest?return=/run&route=${expectedRouteCode}`)}
-            className="min-h-touch rounded-2xl bg-emerald-500 px-4 py-2 text-base font-bold text-slate-900 active:bg-emerald-400"
-          >
-            Read manifest
-          </button>
-        </div>
-      </div>
+      <button
+        type="button"
+        onClick={() => navigate(`/cdc/manifest?return=/run&route=${expectedRouteCode}`)}
+        className="shrink-0 w-full border-t border-amber-500/40 bg-amber-500/10 px-4 py-2 text-left text-sm text-amber-200 active:bg-amber-500/20"
+      >
+        <span className="font-bold">No manifest loaded</span>
+        <span className="ml-2 opacity-80">— tap to read</span>
+      </button>
     );
   }
 
@@ -109,6 +98,37 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
     }
   }
 
+  // ── Collapsed strip: one line at the bottom of the map ────────────────
+  if (!expanded) {
+    const stopLabel = currentStop ? STOP_NAMES[currentStop] : 'Awaiting stop…';
+    const summary = currentStop
+      ? `${boarding.length} boarding · ${alighting.length} alighting`
+      : `${onBoardCount} on bus`;
+
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="shrink-0 w-full border-t border-slate-700 bg-slate-900 px-4 py-2 text-left active:bg-slate-800"
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="min-w-0 truncate">
+            <span className="text-xs uppercase text-slate-400">Next: </span>
+            <span className="text-base font-bold text-slate-100">{stopLabel}</span>
+            <span className="ml-2 text-xs text-slate-400">{summary}</span>
+          </div>
+          <div className="flex shrink-0 items-baseline gap-3 text-xs text-slate-400">
+            <span>
+              <span className="text-emerald-400 font-bold">{onBoardCount}</span> on
+            </span>
+            <span className="text-slate-500">tap ▴</span>
+          </div>
+        </div>
+      </button>
+    );
+  }
+
+  // ── Expanded panel: full controls. Has a close button. ────────────────
   return (
     <div className="shrink-0 max-h-[55vh] overflow-y-auto border-t border-slate-700 bg-slate-900">
       <div className="sticky top-0 z-10 flex items-baseline justify-between gap-3 border-b border-slate-800 bg-slate-900 px-4 py-2">
@@ -121,9 +141,19 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
             <span className="ml-2 text-xs font-medium uppercase text-slate-400">on bus</span>
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-xs uppercase text-slate-400">Boardings</p>
-          <p className="text-xl font-bold text-slate-200">{totalBoardings}</p>
+        <div className="flex items-baseline gap-4">
+          <div className="text-right">
+            <p className="text-xs uppercase text-slate-400">Boardings</p>
+            <p className="text-xl font-bold text-slate-200">{totalBoardings}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            aria-label="Close panel"
+            className="rounded-lg bg-slate-700 px-3 py-1 text-sm font-bold text-slate-100 active:bg-slate-600"
+          >
+            ▾ Close
+          </button>
         </div>
       </div>
 
