@@ -112,7 +112,7 @@ export default function Form25() {
 
   const totalBoardings = totalServiceBoardings(state.passengers);
   const stops = ROUTES[state.routeCode].stops;
-  const mailto = `mailto:CoachPatronage@vline.com.au?cc=${encodeURIComponent('mandeep@freshoz.com')}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+  const mailto = `mailto:mandeep@freshoz.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-3 p-4">
@@ -301,7 +301,7 @@ export default function Form25() {
           href={mailto}
           className="mt-2 block rounded-2xl bg-slate-700 px-6 py-3 text-center text-base font-bold text-slate-50 active:bg-slate-600"
         >
-          Open mail app → CoachPatronage@vline.com.au
+          Open mail app → mandeep@freshoz.com
         </a>
       </section>
 
