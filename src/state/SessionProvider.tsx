@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 import { loadDriverProfile } from '../lib/auth';
@@ -10,6 +10,7 @@ interface SessionState {
   loading: boolean;
   configured: boolean;
   profileError: string | null;
+  refreshProfile: () => Promise<void>;
 }
 
 const SessionContext = createContext<SessionState>({
@@ -18,6 +19,7 @@ const SessionContext = createContext<SessionState>({
   loading: true,
   configured: isSupabaseConfigured,
   profileError: null,
+  refreshProfile: async () => {},
 });
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -67,9 +69,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, [session]);
 
+  // Re-fetch the driver profile without waiting for an auth event. Used by
+  // /register after register_driver RPC links a row, since the auth event
+  // fired earlier (during signIn) and won't repeat.
+  const refreshProfile = useCallback(async () => {
+    if (!session) return;
+    setLoading(true);
+    setProfileError(null);
+    try {
+      const res = await loadDriverProfile();
+      setDriver(res.driver);
+      setProfileError(res.error);
+    } finally {
+      setLoading(false);
+    }
+  }, [session]);
+
   const value = useMemo<SessionState>(
-    () => ({ session, driver, loading, configured: isSupabaseConfigured, profileError }),
-    [session, driver, loading, profileError],
+    () => ({ session, driver, loading, configured: isSupabaseConfigured, profileError, refreshProfile }),
+    [session, driver, loading, profileError, refreshProfile],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

@@ -42,8 +42,8 @@ export async function registerDriver(
 ): Promise<SignUpResult> {
   const trimmedNumber = driverNumber.trim();
   if (!trimmedNumber) return { ok: false, error: 'Driver number is required.' };
-  if (!/^\d{4,12}$/.test(pin)) {
-    return { ok: false, error: 'PIN must be 4–12 digits.' };
+  if (!/^\d{6,12}$/.test(pin)) {
+    return { ok: false, error: 'PIN must be 6–12 digits.' };
   }
 
   const supabase = getSupabase();

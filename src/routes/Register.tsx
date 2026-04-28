@@ -5,7 +5,7 @@ import { useSession } from '../state/SessionProvider';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { session, driver, configured } = useSession();
+  const { session, driver, configured, refreshProfile } = useSession();
   const [driverNumber, setDriverNumber] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -30,7 +30,11 @@ export default function Register() {
       setError(result.error ?? 'Registration failed.');
       setPin('');
       setConfirmPin('');
+      return;
     }
+    // SessionProvider already cached "no driver row" before the RPC linked
+    // the row. Force a re-fetch so the redirect-on-driver effect can fire.
+    await refreshProfile();
   }
 
   return (
@@ -68,7 +72,7 @@ export default function Register() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm uppercase tracking-widest text-slate-400">Choose PIN (4–12 digits)</span>
+          <span className="text-sm uppercase tracking-widest text-slate-400">Choose PIN (6–12 digits)</span>
           <input
             type="password"
             inputMode="numeric"
@@ -78,7 +82,7 @@ export default function Register() {
             onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
             className="min-h-touch rounded-2xl bg-slate-900 px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-emerald-500"
             disabled={submitting || !configured}
-            minLength={4}
+            minLength={6}
             maxLength={12}
             required
           />
@@ -95,7 +99,7 @@ export default function Register() {
             onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
             className="min-h-touch rounded-2xl bg-slate-900 px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-emerald-500"
             disabled={submitting || !configured}
-            minLength={4}
+            minLength={6}
             maxLength={12}
             required
           />
