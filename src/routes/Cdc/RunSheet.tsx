@@ -94,7 +94,7 @@ export default function RunSheet() {
       />
 
       <div className="rounded-2xl bg-slate-800 p-3 text-center">
-        <div className="text-xs uppercase text-slate-400">On board after {currentStop}</div>
+        <div className="text-xs uppercase text-slate-400">On board after {STOP_NAMES[currentStop]}</div>
         <div className="text-counter text-emerald-400">{onBoard}</div>
       </div>
 
@@ -152,8 +152,7 @@ function StopCarousel({
                   : 'bg-slate-800 text-slate-100'
             }`}
           >
-            <div className="font-mono">{stop}</div>
-            <div className="text-[10px] font-medium opacity-80">{STOP_NAMES[stop]}</div>
+            <div className="text-sm">{STOP_NAMES[stop]}</div>
           </button>
         );
       })}
@@ -187,7 +186,7 @@ function BoardingSection({
 
   return (
     <section className="rounded-2xl bg-slate-800 p-3">
-      <h2 className="mb-2 text-base font-bold">Boarding at {currentStop} ({boarding.length})</h2>
+      <h2 className="mb-2 text-base font-bold">Boarding at {STOP_NAMES[currentStop]} ({boarding.length})</h2>
       {boarding.length === 0 && <p className="text-sm text-slate-400">No expected boardings here.</p>}
       <ul className="flex flex-col gap-2">
         {boarding.map((p) => (
@@ -199,7 +198,7 @@ function BoardingSection({
                 {p.priority && <span className="text-amber-400">★</span>}
               </div>
               <div className="text-xs text-slate-400">
-                → {p.leaveStop} · {p.ticketType === 'eTicket' ? 'e' : 'P'}
+                → {STOP_NAMES[p.leaveStop]} · {p.ticketType === 'eTicket' ? 'e' : 'P'}
               </div>
             </div>
             <div className="mt-2 grid grid-cols-2 gap-2">
@@ -242,7 +241,7 @@ function BoardingSection({
           >
             {stops.map((s) => (
               <option key={s} value={s}>
-                {s} {STOP_NAMES[s]}
+                {STOP_NAMES[s]}
               </option>
             ))}
           </select>

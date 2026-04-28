@@ -114,7 +114,7 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
       <div className="sticky top-0 z-10 flex items-baseline justify-between gap-3 border-b border-slate-800 bg-slate-900 px-4 py-2">
         <div>
           <p className="text-xs uppercase text-slate-400">
-            {currentStop ? `${currentStop} ${STOP_NAMES[currentStop]}` : 'Awaiting stop…'}
+            {currentStop ? STOP_NAMES[currentStop] : 'Awaiting stop…'}
           </p>
           <p className="text-2xl font-black text-emerald-400">
             {onBoardCount}
@@ -157,7 +157,7 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
                 >
                   {stops.map((s) => (
                     <option key={s} value={s}>
-                      {s} {STOP_NAMES[s]}
+                      {STOP_NAMES[s]}
                     </option>
                   ))}
                 </select>
@@ -183,7 +183,7 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
                     <div className="min-w-0 truncate text-sm">
                       <span className="font-mono font-bold">{p.seat || '—'}</span>{' '}
                       <span>{p.name}</span>{' '}
-                      <span className="text-xs text-slate-400">→ {p.leaveStop}</span>
+                      <span className="text-xs text-slate-400">→ {STOP_NAMES[p.leaveStop]}</span>
                       {p.priority && <span className="ml-1 text-amber-400">★</span>}
                     </div>
                     <div className="flex shrink-0 gap-1">

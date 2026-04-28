@@ -251,7 +251,7 @@ export default function Form25() {
                     >
                       {stops.map((s) => (
                         <option key={s} value={s}>
-                          {s} {STOP_NAMES[s]}
+                          {STOP_NAMES[s]}
                         </option>
                       ))}
                     </select>

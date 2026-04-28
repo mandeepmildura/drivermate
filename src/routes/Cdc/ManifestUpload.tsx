@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ALL_STOP_CODES, ROUTES, STOP_NAMES, stopLabel } from '../../lib/cdc/stops';
+import { ALL_STOP_CODES, ROUTES, STOP_NAMES } from '../../lib/cdc/stops';
 import { clearRunState, loadRunState, newId, saveRunState } from '../../lib/cdc/state';
 import { stopSummary } from '../../lib/cdc/tally';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
@@ -310,7 +310,7 @@ export default function ManifestUpload() {
                       >
                         {stopOptions.map((s) => (
                           <option key={s} value={s}>
-                            {s}
+                            {STOP_NAMES[s]}
                           </option>
                         ))}
                       </select>
@@ -323,7 +323,7 @@ export default function ManifestUpload() {
                       >
                         {stopOptions.map((s) => (
                           <option key={s} value={s}>
-                            {s}
+                            {STOP_NAMES[s]}
                           </option>
                         ))}
                       </select>
@@ -372,8 +372,7 @@ export default function ManifestUpload() {
               .filter((s) => s.pickups > 0 || s.dropoffs > 0)
               .map((s) => (
                 <li key={s.stop} className="rounded bg-slate-900 px-2 py-1">
-                  <span className="font-mono font-bold">{s.stop}</span>{' '}
-                  <span className="text-slate-400">{STOP_NAMES[s.stop]}</span>
+                  <span className="font-bold">{STOP_NAMES[s.stop]}</span>
                   <div className="text-xs">
                     <span className="text-emerald-400">+{s.pickups}</span>{' '}
                     <span className="text-amber-400">−{s.dropoffs}</span>
@@ -397,12 +396,14 @@ export default function ManifestUpload() {
       </button>
 
       <details className="rounded-2xl bg-slate-800 p-3 text-sm text-slate-300">
-        <summary className="cursor-pointer font-bold">Stop reference</summary>
-        <ul className="mt-2 grid grid-cols-2 gap-1">
-          {stopOptions.map((s) => (
-            <li key={s} className="font-mono text-xs">{stopLabel(s)}</li>
+        <summary className="cursor-pointer font-bold">Stops on this route</summary>
+        <ol className="mt-2 grid grid-cols-2 gap-1">
+          {stopOptions.map((s, i) => (
+            <li key={s} className="text-xs">
+              <span className="text-slate-500">{i + 1}.</span> {STOP_NAMES[s]}
+            </li>
           ))}
-        </ul>
+        </ol>
       </details>
     </main>
   );
