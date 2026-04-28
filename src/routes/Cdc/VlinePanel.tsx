@@ -32,15 +32,18 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
 
   const manifestMatches = !!state && state.routeCode === expectedRouteCode;
 
-  // ── No manifest: thin nag strip, never expands. Tap to read manifest. ──
+  // ── No matching manifest: thin nag strip, never expands. Tap to read. ──
   if (!manifestMatches) {
+    const message = !state
+      ? `No manifest loaded for ${expectedRouteCode}`
+      : `Manifest is for ${state.routeCode}, this run is ${expectedRouteCode}`;
     return (
       <button
         type="button"
         onClick={() => navigate(`/cdc/manifest?return=/run&route=${expectedRouteCode}`)}
         className="shrink-0 w-full border-t border-amber-500/40 bg-amber-500/10 px-4 py-2 text-left text-sm text-amber-200 active:bg-amber-500/20"
       >
-        <span className="font-bold">No manifest loaded</span>
+        <span className="font-bold">{message}</span>
         <span className="ml-2 opacity-80">— tap to read</span>
       </button>
     );
