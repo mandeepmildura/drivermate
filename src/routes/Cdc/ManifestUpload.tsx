@@ -392,7 +392,7 @@ export default function ManifestUpload() {
         disabled={passengers.length === 0}
         className="btn-primary"
       >
-        {returnTo ? 'Confirm &amp; back to run' : 'Confirm &amp; start run'}
+        {returnTo ? 'Confirm & back to run' : 'Confirm & start run'}
       </button>
 
       <details className="rounded-2xl bg-slate-800 p-3 text-sm text-slate-300">
