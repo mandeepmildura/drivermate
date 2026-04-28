@@ -10,6 +10,7 @@ import Admin from './routes/Admin';
 import AdminRouteEditor from './routes/AdminRouteEditor';
 import AdminDrivers from './routes/AdminDrivers';
 import AdminReplay from './routes/AdminReplay';
+import Cdc from './routes/Cdc';
 import { startSyncLoop } from './lib/sync';
 import { startErrorReporter } from './lib/errorReporter';
 import { SessionProvider } from './state/SessionProvider';
@@ -109,6 +110,14 @@ export default function App() {
                 <RequireAdmin>
                   <AdminRouteEditor />
                 </RequireAdmin>
+              </RequireDriver>
+            }
+          />
+          <Route
+            path="/cdc/*"
+            element={
+              <RequireDriver>
+                <Cdc />
               </RequireDriver>
             }
           />

@@ -5,6 +5,7 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.dev.vars
 
 # Claude Code MCP config may contain access tokens
 .mcp.json

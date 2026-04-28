@@ -1,0 +1,74 @@
+import type { RouteCode, StopCode } from './types';
+
+export const STOP_NAMES: Record<StopCode, string> = {
+  BXG: 'Bendigo',
+  SPE: 'Serpentine',
+  BRL: 'Bears Lagoon',
+  DHX: 'Durham Ox',
+  KRA: 'Kerang',
+  LCH: 'Lake Charm',
+  LBG: 'Lake Boga',
+  SWH: 'Swan Hill',
+  NYH: 'Nyah',
+  WOO: 'Wood Wood',
+  PGL: 'Piangil',
+  MGN: 'Manangatang',
+  ANU: 'Annuello T/O',
+  BNN: 'Bannerton T/O',
+  RBC: 'Robinvale',
+  EUS: 'Euston',
+  MQL: 'Mildura',
+};
+
+export const ROUTES: Record<RouteCode, { label: string; stops: StopCode[] }> = {
+  C012: {
+    label: 'C012 Bendigo → Mildura',
+    stops: [
+      'BXG',
+      'SPE',
+      'BRL',
+      'DHX',
+      'KRA',
+      'LCH',
+      'LBG',
+      'SWH',
+      'NYH',
+      'WOO',
+      'PGL',
+      'MGN',
+      'ANU',
+      'BNN',
+      'RBC',
+      'EUS',
+      'MQL',
+    ],
+  },
+  C011: {
+    label: 'C011 Mildura → Bendigo',
+    stops: [
+      'MQL',
+      'EUS',
+      'RBC',
+      'BNN',
+      'ANU',
+      'MGN',
+      'PGL',
+      'WOO',
+      'NYH',
+      'SWH',
+      'LBG',
+      'LCH',
+      'KRA',
+      'DHX',
+      'BRL',
+      'SPE',
+      'BXG',
+    ],
+  },
+};
+
+export const ALL_STOP_CODES: StopCode[] = Object.keys(STOP_NAMES) as StopCode[];
+
+export function stopLabel(code: StopCode): string {
+  return `${code} ${STOP_NAMES[code]}`;
+}
