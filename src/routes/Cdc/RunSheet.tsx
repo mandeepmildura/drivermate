@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES, STOP_NAMES } from '../../lib/cdc/stops';
 import { loadRunState, newId, saveRunState } from '../../lib/cdc/state';
@@ -17,7 +17,6 @@ import { ManifestSummary } from './SummaryCard';
 export default function RunSheet() {
   const navigate = useNavigate();
   const [state, setState] = useState<RunState | null>(() => loadRunState());
-  const autoAdvancedRef = useRef(false);
 
   useEffect(() => {
     if (!state) {
@@ -29,37 +28,15 @@ export default function RunSheet() {
     if (state) saveRunState(state);
   }, [state]);
 
-  // If the run was saved at the first stop with a head count already entered
-  // (either pre-fix runStates, or a Resume flow), advance to the next active
-  // stop on first mount so the bus is treated as departed.
-  useEffect(() => {
-    if (autoAdvancedRef.current) return;
-    if (!state || state.currentStopIndex !== 0) return;
-    const stops = ROUTES[state.routeCode].stops;
-    const firstStop = stops[0];
-    const boardedAtFirst = state.passengers.filter(
-      (p) => p.joinStop === firstStop && (p.status === 'boarded' || p.status === 'walkup'),
-    ).length;
-    if (boardedAtFirst === 0) return;
-    const nextIdx = nextActiveStopIndex(state.passengers, state.routeCode, 0);
-    if (nextIdx <= 0) return;
-    autoAdvancedRef.current = true;
-    setState((prev) => prev && {
-      ...prev,
-      currentStopIndex: nextIdx,
-      stopArrivals: {
-        ...prev.stopArrivals,
-        [firstStop]: prev.stopArrivals[firstStop] ?? prev.startedAt,
-      },
-    });
-  }, [state]);
-
   if (!state) return null;
 
   const stops = ROUTES[state.routeCode].stops;
   const currentStop = stops[state.currentStopIndex];
   const boarding = expectedBoardingAt(state.passengers, currentStop);
   const alighting = expectedAlightingAt(state.passengers, currentStop);
+  const headCountDone = boarding.some(
+    (p) => p.status === 'boarded' || p.status === 'walkup',
+  );
 
   function setPassenger(id: string, patch: Partial<Passenger>) {
     setState((prev) => prev && {
@@ -158,17 +135,30 @@ export default function RunSheet() {
         onJump={jumpTo}
       />
 
-      <BoardingSection
-        passengers={state.passengers}
-        boarding={boarding}
-        currentStop={currentStop}
-        routeCode={state.routeCode}
-        onSet={setPassenger}
-        onWalkUp={addWalkUp}
-        stops={stops}
-      />
+      {state.currentStopIndex === 0 && headCountDone ? (
+        <section className="rounded-2xl bg-slate-800 p-4 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+            Bus loaded at {STOP_NAMES[currentStop]}
+          </p>
+          <p className="mt-2 text-base text-slate-300">
+            Tap <span className="font-bold text-emerald-300">Next stop →</span> when departing.
+          </p>
+        </section>
+      ) : (
+        <>
+          <BoardingSection
+            passengers={state.passengers}
+            boarding={boarding}
+            currentStop={currentStop}
+            routeCode={state.routeCode}
+            onSet={setPassenger}
+            onWalkUp={addWalkUp}
+            stops={stops}
+          />
 
-      <AlightingSection alighting={alighting} onSet={setPassenger} />
+          <AlightingSection alighting={alighting} onSet={setPassenger} />
+        </>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <button
