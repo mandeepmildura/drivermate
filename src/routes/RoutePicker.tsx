@@ -14,11 +14,10 @@ export default function RoutePicker() {
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<'remote' | 'cache' | null>(null);
 
-  const canDriveVline = driver?.can_drive_vline ?? false;
-
+  // School-only: V/Line drivers reach V/Line via /services → /cdc/routes.
   useEffect(() => {
     let cancelled = false;
-    loadActiveRoutes(canDriveVline).then((res) => {
+    loadActiveRoutes(false).then((res) => {
       if (cancelled) return;
       setRoutes(res.rows);
       setSource(res.source);
@@ -27,7 +26,7 @@ export default function RoutePicker() {
     return () => {
       cancelled = true;
     };
-  }, [canDriveVline]);
+  }, []);
 
   function pick(routeId: string) {
     setRoute(routeId);

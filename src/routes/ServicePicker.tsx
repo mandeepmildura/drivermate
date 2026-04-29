@@ -40,7 +40,7 @@ export default function ServicePicker() {
           <div className="text-sm font-semibold opacity-80">CDC Mildura school bus runs</div>
         </Link>
         <Link
-          to="/cdc/manifest"
+          to="/cdc/routes"
           className="min-h-touch rounded-3xl bg-sky-500 px-5 py-6 text-slate-900 active:bg-sky-400"
         >
           <div className="text-2xl font-black">V/Line</div>
