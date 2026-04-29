@@ -128,6 +128,47 @@ export function setBoardedCountAt(
   });
 }
 
+// Two passengers can legitimately share a seat across non-overlapping legs:
+// e.g. seat B8 from Mildura→Robinvale, then again Robinvale→Bendigo. Only
+// flag a clash when their occupied stop intervals actually overlap.
+// Treat the manifest stop indices as half-open [join, leave) ranges so a
+// passenger leaving exactly when another joins (touching at one stop) is fine.
+export function findSeatConflicts(
+  passengers: Passenger[],
+  routeCode: RouteCode,
+): Set<string> {
+  const stops = ROUTES[routeCode].stops;
+  const idx = (s: StopCode) => stops.indexOf(s);
+
+  const bySeat = new Map<string, Passenger[]>();
+  for (const p of passengers) {
+    if (!p.seat) continue;
+    const list = bySeat.get(p.seat) ?? [];
+    list.push(p);
+    bySeat.set(p.seat, list);
+  }
+
+  const conflicts = new Set<string>();
+  for (const list of bySeat.values()) {
+    if (list.length < 2) continue;
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const a = list[i];
+        const b = list[j];
+        const aStart = idx(a.joinStop);
+        const aEnd = idx(a.leaveStop);
+        const bStart = idx(b.joinStop);
+        const bEnd = idx(b.leaveStop);
+        if (aStart < bEnd && bStart < aEnd) {
+          conflicts.add(a.id);
+          conflicts.add(b.id);
+        }
+      }
+    }
+  }
+  return conflicts;
+}
+
 export type StopSummary = { stop: StopCode; pickups: number; dropoffs: number };
 
 // The four-number ledger that powers the always-visible Manifest Summary.

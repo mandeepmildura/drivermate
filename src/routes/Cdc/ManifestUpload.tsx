@@ -10,7 +10,12 @@ import {
   savePendingManifest,
   saveRunState,
 } from '../../lib/cdc/state';
-import { ledgerSnapshot, setBoardedCountAt, stopSummary } from '../../lib/cdc/tally';
+import {
+  findSeatConflicts,
+  ledgerSnapshot,
+  setBoardedCountAt,
+  stopSummary,
+} from '../../lib/cdc/tally';
 import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
 import { getSupabase } from '../../lib/supabase';
@@ -229,19 +234,16 @@ export default function ManifestUpload() {
   }
 
   const flagged = useMemo(() => {
-    const seatCounts = new Map<string, number>();
-    for (const p of passengers) {
-      if (p.seat) seatCounts.set(p.seat, (seatCounts.get(p.seat) ?? 0) + 1);
-    }
+    const conflicts = findSeatConflicts(passengers, routeCode);
     return passengers
       .map((p) => {
         const reasons: string[] = [];
         if (!p.seat) reasons.push('missing seat');
-        if (p.seat && (seatCounts.get(p.seat) ?? 0) > 1) reasons.push('duplicate seat');
+        if (conflicts.has(p.id)) reasons.push('seat clash');
         return reasons.length > 0 ? { passenger: p, reasons } : null;
       })
       .filter((x): x is { passenger: Passenger; reasons: string[] } => x !== null);
-  }, [passengers]);
+  }, [passengers, routeCode]);
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-4">
@@ -364,7 +366,7 @@ export default function ManifestUpload() {
         </section>
       )}
 
-      {flagged.length > 0 && (
+      {flagged.length > 0 && boardedFirst === 0 && (
         <section className="rounded-2xl bg-amber-500/10 p-3 ring-1 ring-amber-500/30">
           <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-amber-200">
             {flagged.length} row{flagged.length === 1 ? '' : 's'} need a quick fix

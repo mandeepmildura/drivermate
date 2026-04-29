@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { groupedBoardingAt, ledgerSnapshot, setBoardedCountAt } from './tally';
+import {
+  findSeatConflicts,
+  groupedBoardingAt,
+  ledgerSnapshot,
+  setBoardedCountAt,
+} from './tally';
 import type { Passenger, RouteCode, StopCode } from './types';
 
 function pax(seat: string, joinStop: StopCode, leaveStop: StopCode): Passenger {
@@ -137,6 +142,43 @@ describe('ledgerSnapshot', () => {
     const stopsList = ['MQL', 'EUS', 'RBC', 'BNN'];
     const ledger = ledgerSnapshot(passengers, C012, stopsList.length - 1);
     expect(ledger.onBus).toBe(1);
+  });
+});
+
+describe('findSeatConflicts', () => {
+  it('returns empty when seats are unique', () => {
+    const passengers = [pax('1', FIRST_STOP, 'BXG'), pax('2', FIRST_STOP, 'BXG')];
+    expect(findSeatConflicts(passengers, C012).size).toBe(0);
+  });
+
+  it('does not flag the same seat across non-overlapping legs', () => {
+    // Seat B8 used Mildura → Robinvale, then Robinvale → Bendigo. Touching at
+    // RBC but not overlapping — the seat frees up exactly when the second
+    // passenger boards.
+    const a = pax('B8', 'MQL', 'RBC');
+    const b = pax('B8', 'RBC', 'BXG');
+    expect(findSeatConflicts([a, b], C012).size).toBe(0);
+  });
+
+  it('flags the same seat when legs overlap', () => {
+    const a = pax('B8', 'MQL', 'BXG');
+    const b = pax('B8', 'MQL', 'SWH');
+    const conflicts = findSeatConflicts([a, b], C012);
+    expect(conflicts.has(a.id)).toBe(true);
+    expect(conflicts.has(b.id)).toBe(true);
+  });
+
+  it('flags partial leg overlap', () => {
+    // a: MQL → SWH, b: RBC → BXG — they share the bus from RBC to SWH
+    const a = pax('B8', 'MQL', 'SWH');
+    const b = pax('B8', 'RBC', 'BXG');
+    expect(findSeatConflicts([a, b], C012).size).toBe(2);
+  });
+
+  it('ignores passengers with no seat', () => {
+    const a = pax('', 'MQL', 'BXG');
+    const b = pax('', 'MQL', 'BXG');
+    expect(findSeatConflicts([a, b], C012).size).toBe(0);
   });
 });
 
