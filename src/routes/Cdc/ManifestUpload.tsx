@@ -207,7 +207,9 @@ export default function ManifestUpload() {
       stopArrivals: {},
     });
     clearPendingManifest();
-    navigate(returnTo || '/cdc/run');
+    // Fresh V/Line flow lands on /bus → /run for map + GPS + turn-by-turn.
+    // Manifest-from-run-screen path keeps its return URL.
+    navigate(returnTo || '/bus');
   }
 
   function discardExisting() {

@@ -4,8 +4,9 @@ import { signOutDriver } from '../../lib/auth';
 import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { RouteCode } from '../../lib/cdc/types';
 import type { RouteRow } from '../../lib/db';
-import { loadActiveRoutes } from '../../lib/routes';
+import { loadActiveRoutes, loadRoutePath } from '../../lib/routes';
 import { useSession } from '../../state/SessionProvider';
+import { useShiftSetup } from '../../state/ShiftSetupProvider';
 
 // Weekend variants like C012-SAT/C012-SUN reuse the same stop sequence as the
 // base C012 route. Map any V/Line route_number back to its base RouteCode so
@@ -18,6 +19,7 @@ function baseCode(routeNumber: string): RouteCode {
 export default function CdcRoutePicker() {
   const navigate = useNavigate();
   const { driver } = useSession();
+  const { setRoute } = useShiftSetup();
   const [routes, setRoutes] = useState<RouteRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<'remote' | 'cache' | null>(null);
@@ -35,8 +37,12 @@ export default function CdcRoutePicker() {
     };
   }, []);
 
-  function pick(routeNumber: string) {
-    navigate(`/cdc/manifest?route=${baseCode(routeNumber)}`);
+  function pick(route: RouteRow) {
+    // Set the route in ShiftSetupProvider so /bus and /run know which route is
+    // being driven. Pre-fetch the path geojson so the map renders fast on /run.
+    setRoute(route.id);
+    void loadRoutePath(route.id);
+    navigate(`/cdc/manifest?route=${baseCode(route.route_number)}`);
   }
 
   return (
@@ -85,7 +91,7 @@ export default function CdcRoutePicker() {
             <li key={route.id}>
               <button
                 type="button"
-                onClick={() => pick(route.route_number)}
+                onClick={() => pick(route)}
                 className={`min-h-touch w-full rounded-3xl px-5 py-5 text-left ${theme.solid}`}
               >
                 <div className="text-2xl font-black">{route.route_number}</div>
