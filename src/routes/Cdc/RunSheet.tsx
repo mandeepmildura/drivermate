@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES, STOP_NAMES } from '../../lib/cdc/stops';
 import { loadRunState, newId, saveRunState } from '../../lib/cdc/state';
@@ -17,6 +17,7 @@ import { ManifestSummary } from './SummaryCard';
 export default function RunSheet() {
   const navigate = useNavigate();
   const [state, setState] = useState<RunState | null>(() => loadRunState());
+  const autoAdvancedRef = useRef(false);
 
   useEffect(() => {
     if (!state) {
@@ -26,6 +27,31 @@ export default function RunSheet() {
 
   useEffect(() => {
     if (state) saveRunState(state);
+  }, [state]);
+
+  // If the run was saved at the first stop with a head count already entered
+  // (either pre-fix runStates, or a Resume flow), advance to the next active
+  // stop on first mount so the bus is treated as departed.
+  useEffect(() => {
+    if (autoAdvancedRef.current) return;
+    if (!state || state.currentStopIndex !== 0) return;
+    const stops = ROUTES[state.routeCode].stops;
+    const firstStop = stops[0];
+    const boardedAtFirst = state.passengers.filter(
+      (p) => p.joinStop === firstStop && (p.status === 'boarded' || p.status === 'walkup'),
+    ).length;
+    if (boardedAtFirst === 0) return;
+    const nextIdx = nextActiveStopIndex(state.passengers, state.routeCode, 0);
+    if (nextIdx <= 0) return;
+    autoAdvancedRef.current = true;
+    setState((prev) => prev && {
+      ...prev,
+      currentStopIndex: nextIdx,
+      stopArrivals: {
+        ...prev.stopArrivals,
+        [firstStop]: prev.stopArrivals[firstStop] ?? prev.startedAt,
+      },
+    });
   }, [state]);
 
   if (!state) return null;
