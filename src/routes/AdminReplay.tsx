@@ -9,7 +9,6 @@ import { hasPassedWaypoint } from '../lib/turfUtils';
 import {
   ARRIVED_DISTANCE_M,
   ARRIVAL_DWELL_MS_STOP,
-  ARRIVAL_DWELL_MS_TURN,
   AUDIO_TRIGGER_M,
 } from '../lib/runConfig';
 
@@ -202,17 +201,22 @@ export default function AdminReplay() {
         pushEvent(`Audio cue would fire for #${stopIndex + 1} ${stop.stop_name} (${Math.round(haversine)} m)`);
       }
 
-      // Auto-advance: passed-waypoint OR dwell timer inside ARRIVED_DISTANCE_M.
+      // Auto-advance:
+      //   - Stops: passed-waypoint OR 8 s dwell inside ARRIVED_DISTANCE_M.
+      //   - Turns: passed-waypoint only — being inside the geofence just
+      //     means the bus is approaching the turn, not that it's executed.
       const passed = hasPassedWaypoint(cb.lat, cb.lng, stops, stopIndex);
-      const dwellMs = stop.kind === 'turn' ? ARRIVAL_DWELL_MS_TURN : ARRIVAL_DWELL_MS_STOP;
+      const isTurn = stop.kind === 'turn';
       const inside = haversine != null && haversine <= ARRIVED_DISTANCE_M;
 
       if (passed) {
         advanceStop(stopIndex, 'passed-waypoint');
+      } else if (isTurn) {
+        arrivedSinceRef.current = null;
       } else if (inside) {
         if (arrivedSinceRef.current == null) arrivedSinceRef.current = now;
-        if (now - (arrivedSinceRef.current ?? now) >= dwellMs) {
-          advanceStop(stopIndex, dwellMs > 0 ? `dwell ${dwellMs / 1000}s` : 'turn-touch');
+        if (now - (arrivedSinceRef.current ?? now) >= ARRIVAL_DWELL_MS_STOP) {
+          advanceStop(stopIndex, `dwell ${ARRIVAL_DWELL_MS_STOP / 1000}s`);
         }
       } else {
         arrivedSinceRef.current = null;

@@ -36,7 +36,6 @@ import {
   AUDIO_TRIGGER_M,
   ARRIVED_DISTANCE_M,
   ARRIVAL_DWELL_MS_STOP,
-  ARRIVAL_DWELL_MS_TURN,
   BREADCRUMB_INTERVAL_MS,
 } from '../lib/runConfig';
 
@@ -160,14 +159,14 @@ export default function Run() {
   }, [currentStop?.id, distanceDisplay, audioUnlocked, muted]);
 
   // GPS geofence auto-advance.
-  // Two triggers:
-  //   1. Bus inside 50 m for the dwell window (8 s for stops, 0 s for turns).
-  //   2. Bus has clearly driven past the waypoint along the route line.
-  // Trigger #2 catches request-stops the driver blew past without halting and
-  // turn waypoints that sit a bit off the road centreline — both of which
-  // would otherwise leave the navigation banner stuck on a waypoint that's
-  // already behind the bus.
-  const dwellMs = currentStop?.kind === 'turn' ? ARRIVAL_DWELL_MS_TURN : ARRIVAL_DWELL_MS_STOP;
+  //   - Stops: bus inside 50 m for the 8 s dwell window, OR has driven past
+  //     the waypoint along the route line. The "passed" trigger catches
+  //     request-stops the driver blew past without halting.
+  //   - Turns: passed-waypoint only. Being inside 50 m of a turn waypoint
+  //     just means the driver is approaching it; the maneuver hasn't been
+  //     executed yet. Advancing on the geofence used to flip the banner to
+  //     the next instruction while the bus was still lining up the turn.
+  const isTurn = currentStop?.kind === 'turn';
   useEffect(() => {
     if (!shift || !currentStop) return;
     if (autoAdvancedStopRef.current === currentStop.id) return;
@@ -179,6 +178,8 @@ export default function Run() {
       return;
     }
 
+    if (isTurn) return;
+
     if (distanceToStop == null) return;
 
     if (distanceToStop > ARRIVED_DISTANCE_M) {
@@ -188,15 +189,14 @@ export default function Run() {
 
     if (arrivedSinceRef.current == null) {
       arrivedSinceRef.current = Date.now();
-      if (dwellMs > 0) return;
     }
 
-    if (Date.now() - arrivedSinceRef.current! >= dwellMs) {
+    if (Date.now() - arrivedSinceRef.current! >= ARRIVAL_DWELL_MS_STOP) {
       autoAdvancedStopRef.current = currentStop.id;
       arrivedSinceRef.current = null;
       logCurrentStop({ source: 'gps' });
     }
-  }, [distanceToStop, passedCurrentStop, currentStop?.id, shift?.id, dwellMs]);
+  }, [distanceToStop, passedCurrentStop, currentStop?.id, shift?.id, isTurn]);
 
   // GPS breadcrumb recorder — captures one fix every 5s while a shift is active.
   // Doubles as Vic Bus Safety Reg 31 retention data and as the source for
@@ -325,7 +325,7 @@ export default function Run() {
         };
       } else {
         const elapsed = arrivedSinceRef.current ? Date.now() - arrivedSinceRef.current : 0;
-        const remaining = Math.max(0, Math.ceil((dwellMs - elapsed) / 1000));
+        const remaining = Math.max(0, Math.ceil((ARRIVAL_DWELL_MS_STOP - elapsed) / 1000));
         proximityBanner = isTurn
           ? { label: 'At turn — advancing.', cls: 'bg-blue-500/20 text-blue-200', showManual: false }
           : {
@@ -422,7 +422,7 @@ export default function Run() {
               </p>
             )}
           </div>
-          {nextStopStatus !== 'ontime' && (
+          {(nextStopStatus === 'late' || nextStopStatus === 'delayed') && (
             <span
               className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${
                 nextStopStatus === 'late'
