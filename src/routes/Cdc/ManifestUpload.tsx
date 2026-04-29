@@ -253,7 +253,7 @@ export default function ManifestUpload() {
       )}
 
       <div className="grid grid-cols-2 gap-2">
-        {(['C012', 'C011'] as RouteCode[]).map((code) => (
+        {!routeQuery && (['C012', 'C011'] as RouteCode[]).map((code) => (
           <button
             key={code}
             type="button"
@@ -268,6 +268,14 @@ export default function ManifestUpload() {
             <div className="text-xs font-medium opacity-80">{ROUTES[code].label.replace(`${code} `, '')}</div>
           </button>
         ))}
+        {routeQuery && (
+          <div className="col-span-2 rounded-2xl bg-slate-800 px-4 py-3 text-base font-bold text-slate-100">
+            <div>{routeCode}</div>
+            <div className="text-xs font-medium text-slate-400">
+              {ROUTES[routeCode].label.replace(`${routeCode} `, '')}
+            </div>
+          </div>
+        )}
       </div>
 
       <section className="rounded-2xl bg-slate-800 p-3">
