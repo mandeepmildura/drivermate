@@ -169,6 +169,25 @@ export function findSeatConflicts(
   return conflicts;
 }
 
+// Return the next stop index ahead of `fromIdx` that has at least one
+// pickup or dropoff. Stops with +0/-0 (no scheduled activity) are skipped.
+// Falls back to the last stop in the route so Form 25 / end-of-run still
+// fires even if the tail of the route has no scheduled activity.
+export function nextActiveStopIndex(
+  passengers: Passenger[],
+  routeCode: RouteCode,
+  fromIdx: number,
+): number {
+  const stops = ROUTES[routeCode].stops;
+  for (let i = fromIdx + 1; i < stops.length; i++) {
+    const s = stops[i];
+    const pickups = passengers.filter((p) => p.joinStop === s).length;
+    const dropoffs = passengers.filter((p) => p.leaveStop === s).length;
+    if (pickups > 0 || dropoffs > 0) return i;
+  }
+  return stops.length - 1;
+}
+
 export type StopSummary = { stop: StopCode; pickups: number; dropoffs: number };
 
 // The four-number ledger that powers the always-visible Manifest Summary.
