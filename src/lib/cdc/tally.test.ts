@@ -3,6 +3,7 @@ import {
   findSeatConflicts,
   groupedBoardingAt,
   ledgerSnapshot,
+  nextActiveStopIndex,
   setBoardedCountAt,
 } from './tally';
 import type { Passenger, RouteCode, StopCode } from './types';
@@ -142,6 +143,26 @@ describe('ledgerSnapshot', () => {
     const stopsList = ['MQL', 'EUS', 'RBC', 'BNN'];
     const ledger = ledgerSnapshot(passengers, C012, stopsList.length - 1);
     expect(ledger.onBus).toBe(1);
+  });
+});
+
+describe('nextActiveStopIndex', () => {
+  it('skips stops with no pickups and no dropoffs', () => {
+    // C012 stops: MQL=0, EUS=1, RBC=2, BNN=3, ANU=4, MGN=5, ...
+    // Only RBC and MGN have activity. From MQL (0), next active should be RBC (2).
+    const passengers = [
+      pax('1', FIRST_STOP, 'RBC'),
+      pax('2', FIRST_STOP, 'MGN'),
+    ];
+    expect(nextActiveStopIndex(passengers, C012, 0)).toBe(2);
+    expect(nextActiveStopIndex(passengers, C012, 2)).toBe(5);
+  });
+
+  it('falls back to the last stop when no further activity', () => {
+    // Only one passenger MQL→RBC. From RBC there's nothing ahead → last stop.
+    const passengers = [pax('1', FIRST_STOP, 'RBC')];
+    const lastIdx = 16; // BXG
+    expect(nextActiveStopIndex(passengers, C012, 2)).toBe(lastIdx);
   });
 });
 

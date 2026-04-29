@@ -13,6 +13,7 @@ import {
 import {
   findSeatConflicts,
   ledgerSnapshot,
+  nextActiveStopIndex,
   setBoardedCountAt,
   stopSummary,
 } from '../../lib/cdc/tally';
@@ -199,12 +200,23 @@ export default function ManifestUpload() {
       setError('No passengers yet. Read a manifest or add one manually.');
       return;
     }
+    const startedAt = new Date().toISOString();
+    // If a head count has already been entered at the first stop, the boarding
+    // work is done — drop the driver straight at the next active stop with the
+    // bus already departed. Mildura's arrival is recorded as the run start.
+    const headCountDone = boardedFirst > 0;
+    const startIndex = headCountDone
+      ? nextActiveStopIndex(passengers, routeCode, 0)
+      : 0;
+    const stopArrivals = headCountDone
+      ? { [firstStop]: startedAt }
+      : {};
     saveRunState({
       routeCode,
-      startedAt: new Date().toISOString(),
+      startedAt,
       passengers,
-      currentStopIndex: 0,
-      stopArrivals: {},
+      currentStopIndex: startIndex,
+      stopArrivals,
     });
     clearPendingManifest();
     navigate(returnTo || '/cdc/run');

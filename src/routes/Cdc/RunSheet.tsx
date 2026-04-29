@@ -7,6 +7,7 @@ import {
   expectedBoardingAt,
   groupedBoardingAt,
   ledgerSnapshot,
+  nextActiveStopIndex,
   setBoardedCountAt,
 } from '../../lib/cdc/tally';
 import { ROUTE_THEMES } from '../../lib/cdc/theme';
@@ -68,27 +69,13 @@ export default function RunSheet() {
     setState((prev) => prev && { ...prev, currentStopIndex: Math.max(0, Math.min(stops.length - 1, idx)) });
   }
 
-  // Find the next stop ahead with at least one pickup or dropoff. Stops with
-  // +0/-0 (no scheduled activity) are skipped: bus drives through, no screen
-  // interaction. Driver can still tap any stop in the carousel to override
-  // and pull up — handy for unscheduled walk-ups.
-  function nextActiveIndex(fromIdx: number): number {
-    for (let i = fromIdx + 1; i < stops.length; i++) {
-      const s = stops[i];
-      const pickups = state!.passengers.filter((p) => p.joinStop === s).length;
-      const dropoffs = state!.passengers.filter((p) => p.leaveStop === s).length;
-      if (pickups > 0 || dropoffs > 0) return i;
-    }
-    return stops.length - 1;
-  }
-
   function nextStop() {
     if (!state) return;
     if (state.currentStopIndex >= stops.length - 1) {
       navigate('/cdc/form25');
       return;
     }
-    const targetIdx = nextActiveIndex(state.currentStopIndex);
+    const targetIdx = nextActiveStopIndex(state.passengers, state.routeCode, state.currentStopIndex);
     setState((prev) => {
       if (!prev) return prev;
       const nextStopCode = stops[targetIdx];
