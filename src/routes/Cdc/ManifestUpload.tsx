@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ALL_STOP_CODES, ROUTES, STOP_NAMES } from '../../lib/cdc/stops';
 import { clearRunState, loadRunState, newId, saveRunState } from '../../lib/cdc/state';
 import { stopSummary } from '../../lib/cdc/tally';
+import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
 import { getSupabase } from '../../lib/supabase';
 import { CountBadge, SeatPill } from './ui';
@@ -260,7 +261,7 @@ export default function ManifestUpload() {
             onClick={() => setRouteCode(code)}
             className={`min-h-touch rounded-2xl px-4 py-3 text-left text-base font-bold ${
               routeCode === code
-                ? 'bg-emerald-500 text-slate-900'
+                ? ROUTE_THEMES[code].solid
                 : 'bg-slate-800 text-slate-100 active:bg-slate-700'
             }`}
           >
@@ -269,9 +270,9 @@ export default function ManifestUpload() {
           </button>
         ))}
         {routeQuery && (
-          <div className="col-span-2 rounded-2xl bg-slate-800 px-4 py-3 text-base font-bold text-slate-100">
+          <div className={`col-span-2 rounded-2xl px-4 py-3 text-base font-bold ${ROUTE_THEMES[routeCode].badge}`}>
             <div>{routeCode}</div>
-            <div className="text-xs font-medium text-slate-400">
+            <div className="text-xs font-medium opacity-80">
               {ROUTES[routeCode].label.replace(`${routeCode} `, '')}
             </div>
           </div>

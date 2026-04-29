@@ -8,6 +8,7 @@ import {
   groupedBoardingAt,
   totalServiceBoardings,
 } from '../../lib/cdc/tally';
+import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, RunState, StopCode } from '../../lib/cdc/types';
 import { CountBadge, SeatPill } from './ui';
 
@@ -116,18 +117,22 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
   // ── Collapsed strip ──────────────────────────────────────────────────────
   if (!expanded) {
     const stopLabel = currentStop ? STOP_NAMES[currentStop] : 'Awaiting stop…';
+    const theme = ROUTE_THEMES[expectedRouteCode];
 
     return (
       <button
         type="button"
         onClick={() => setExpanded(true)}
         className="shrink-0 w-full bg-slate-800 px-4 py-3 text-left active:bg-slate-700"
-        style={{ boxShadow: 'inset 3px 0 0 0 rgb(16 185 129)' }}
+        style={{ boxShadow: `inset 3px 0 0 0 ${theme.edgeColor}` }}
         aria-label="Expand V/Line panel"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <span className={`rounded px-1.5 py-0.5 text-[10px] ${theme.badge}`}>
+                {expectedRouteCode}
+              </span>
               Next stop
             </p>
             <p className="truncate text-base font-bold text-slate-100">
@@ -158,9 +163,15 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
   // ── Expanded sheet ───────────────────────────────────────────────────────
   return (
     <div className="shrink-0 max-h-[60vh] overflow-y-auto bg-slate-800">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-slate-800 px-4 pb-3 pt-3">
+      <div
+        className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-slate-800 px-4 pb-3 pt-3"
+        style={{ boxShadow: `inset 3px 0 0 0 ${ROUTE_THEMES[expectedRouteCode].edgeColor}` }}
+      >
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            <span className={`rounded px-1.5 py-0.5 ${ROUTE_THEMES[expectedRouteCode].badge}`}>
+              {expectedRouteCode}
+            </span>
             {currentStop ? 'Current stop' : 'Awaiting stop…'}
           </p>
           <h2 className="text-2xl font-black leading-tight text-slate-100">

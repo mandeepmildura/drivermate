@@ -8,6 +8,7 @@ import {
   groupedBoardingAt,
   onBoardAfter,
 } from '../../lib/cdc/tally';
+import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, RunState, StopCode } from '../../lib/cdc/types';
 
 export default function RunSheet() {
@@ -84,7 +85,12 @@ export default function RunSheet() {
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-3 p-4">
       <header className="flex items-baseline justify-between">
         <div>
-          <h1 className="text-xl font-black">{state.routeCode} run</h1>
+          <h1 className="flex items-center gap-2 text-xl font-black">
+            <span className={`rounded px-2 py-0.5 text-base ${ROUTE_THEMES[state.routeCode].badge}`}>
+              {state.routeCode}
+            </span>
+            run
+          </h1>
           <p className="text-xs text-slate-400">{ROUTES[state.routeCode].label}</p>
         </div>
         <Link to="/cdc/manifest" className="text-sm text-blue-400 underline-offset-4 hover:underline">
