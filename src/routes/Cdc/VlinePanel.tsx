@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES, STOP_NAMES, stopCodeFromName } from '../../lib/cdc/stops';
 import { loadRunState, newId, saveRunState } from '../../lib/cdc/state';
-import { expectedAlightingAt, expectedBoardingAt, totalServiceBoardings } from '../../lib/cdc/tally';
+import {
+  expectedAlightingAt,
+  expectedBoardingAt,
+  groupedBoardingAt,
+  totalServiceBoardings,
+} from '../../lib/cdc/tally';
 import type { Passenger, RouteCode, RunState, StopCode } from '../../lib/cdc/types';
 import { CountBadge, SeatPill } from './ui';
 
@@ -56,6 +61,9 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
   ).length;
   const totalBoardings = totalServiceBoardings(passengers);
   const boarding = currentStop ? expectedBoardingAt(passengers, currentStop) : [];
+  const boardingGroups = currentStop
+    ? groupedBoardingAt(passengers, currentStop, expectedRouteCode)
+    : [];
   const alighting = currentStop ? expectedAlightingAt(passengers, currentStop) : [];
   const remainingToMark = alighting.filter((p) => p.status !== 'alighted');
   const allOff = alighting.length > 0 && remainingToMark.length === 0;
@@ -238,46 +246,69 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
             {boarding.length === 0 ? (
               <p className="text-sm text-slate-500">No expected boardings here.</p>
             ) : (
-              <ul className="flex flex-col gap-2">
-                {boarding.map((p) => {
-                  const isOn = p.status === 'boarded' || p.status === 'walkup';
+              <div className="flex flex-col gap-3">
+                {boardingGroups.map((group) => {
+                  const groupOn = group.passengers.filter(
+                    (p) => p.status === 'boarded' || p.status === 'walkup',
+                  ).length;
                   return (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPassenger(p.id, {
-                            status: isOn ? 'expected' : 'boarded',
-                          })
-                        }
-                        aria-pressed={isOn}
-                        className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
-                          isOn
-                            ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
-                            : 'bg-slate-800 text-slate-100 active:bg-slate-700'
-                        }`}
-                      >
-                        <span
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-black ${
-                            isOn ? 'bg-slate-900/15 text-slate-900' : 'border-2 border-slate-600 text-transparent'
-                          }`}
-                          aria-hidden
-                        >
-                          ✓
-                        </span>
-                        <SeatPill seat={p.seat} tone={isOn ? 'inverse' : 'default'} />
-                        <span className="min-w-0 flex-1 truncate text-sm">
-                          <span className="font-bold">{p.name}</span>{' '}
-                          <span className={`text-xs ${isOn ? 'text-slate-700' : 'text-slate-400'}`}>
-                            → {STOP_NAMES[p.leaveStop]}
+                    <div key={group.destination ?? 'all'} className="flex flex-col gap-2">
+                      {group.destination && (
+                        <div className="flex items-baseline justify-between px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                          <span>→ {STOP_NAMES[group.destination]}</span>
+                          <span className="tabular-nums text-slate-300">
+                            {groupOn}/{group.passengers.length}
                           </span>
-                          {p.priority && <span className="ml-1 text-amber-400">★</span>}
-                        </span>
-                      </button>
-                    </li>
+                        </div>
+                      )}
+                      <ul className="flex flex-col gap-2">
+                        {group.passengers.map((p) => {
+                          const isOn = p.status === 'boarded' || p.status === 'walkup';
+                          return (
+                            <li key={p.id}>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPassenger(p.id, {
+                                    status: isOn ? 'expected' : 'boarded',
+                                  })
+                                }
+                                aria-pressed={isOn}
+                                className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
+                                  isOn
+                                    ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
+                                    : 'bg-slate-800 text-slate-100 active:bg-slate-700'
+                                }`}
+                              >
+                                <span
+                                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-black ${
+                                    isOn
+                                      ? 'bg-slate-900/15 text-slate-900'
+                                      : 'border-2 border-slate-600 text-transparent'
+                                  }`}
+                                  aria-hidden
+                                >
+                                  ✓
+                                </span>
+                                <SeatPill seat={p.seat} tone={isOn ? 'inverse' : 'default'} />
+                                <span className="min-w-0 flex-1 truncate text-sm">
+                                  <span className="font-bold">{p.name}</span>{' '}
+                                  <span
+                                    className={`text-xs ${isOn ? 'text-slate-700' : 'text-slate-400'}`}
+                                  >
+                                    → {STOP_NAMES[p.leaveStop]}
+                                  </span>
+                                  {p.priority && <span className="ml-1 text-amber-400">★</span>}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
                   );
                 })}
-              </ul>
+              </div>
             )}
           </section>
 
