@@ -68,19 +68,33 @@ export default function RunSheet() {
     setState((prev) => prev && { ...prev, currentStopIndex: Math.max(0, Math.min(stops.length - 1, idx)) });
   }
 
+  // Find the next stop ahead with at least one pickup or dropoff. Stops with
+  // +0/-0 (no scheduled activity) are skipped: bus drives through, no screen
+  // interaction. Driver can still tap any stop in the carousel to override
+  // and pull up — handy for unscheduled walk-ups.
+  function nextActiveIndex(fromIdx: number): number {
+    for (let i = fromIdx + 1; i < stops.length; i++) {
+      const s = stops[i];
+      const pickups = state!.passengers.filter((p) => p.joinStop === s).length;
+      const dropoffs = state!.passengers.filter((p) => p.leaveStop === s).length;
+      if (pickups > 0 || dropoffs > 0) return i;
+    }
+    return stops.length - 1;
+  }
+
   function nextStop() {
     if (!state) return;
     if (state.currentStopIndex >= stops.length - 1) {
       navigate('/cdc/form25');
       return;
     }
+    const targetIdx = nextActiveIndex(state.currentStopIndex);
     setState((prev) => {
       if (!prev) return prev;
-      const idx = prev.currentStopIndex + 1;
-      const nextStopCode = stops[idx];
+      const nextStopCode = stops[targetIdx];
       return {
         ...prev,
-        currentStopIndex: idx,
+        currentStopIndex: targetIdx,
         stopArrivals: { ...prev.stopArrivals, [nextStopCode]: new Date().toISOString() },
       };
     });
@@ -127,6 +141,7 @@ export default function RunSheet() {
       <StopCarousel
         stops={stops}
         currentIndex={state.currentStopIndex}
+        passengers={state.passengers}
         onJump={jumpTo}
       />
 
@@ -162,10 +177,12 @@ export default function RunSheet() {
 function StopCarousel({
   stops,
   currentIndex,
+  passengers,
   onJump,
 }: {
   stops: StopCode[];
   currentIndex: number;
+  passengers: Passenger[];
   onJump: (idx: number) => void;
 }) {
   return (
@@ -173,6 +190,9 @@ function StopCarousel({
       {stops.map((stop, idx) => {
         const isCurrent = idx === currentIndex;
         const isPast = idx < currentIndex;
+        const pickups = passengers.filter((p) => p.joinStop === stop).length;
+        const dropoffs = passengers.filter((p) => p.leaveStop === stop).length;
+        const isSkippable = pickups === 0 && dropoffs === 0 && idx !== currentIndex && idx !== stops.length - 1;
         return (
           <button
             key={stop}
@@ -183,10 +203,18 @@ function StopCarousel({
                 ? 'bg-emerald-500 text-slate-900'
                 : isPast
                   ? 'bg-slate-700 text-slate-400 line-through'
-                  : 'bg-slate-800 text-slate-100'
+                  : isSkippable
+                    ? 'bg-slate-800/50 text-slate-500'
+                    : 'bg-slate-800 text-slate-100'
             }`}
+            title={isSkippable ? 'No scheduled pickups or dropoffs — auto-skipped (tap to pull up anyway)' : undefined}
           >
             <div className="text-sm">{STOP_NAMES[stop]}</div>
+            {!isCurrent && !isPast && (pickups > 0 || dropoffs > 0) && (
+              <div className="mt-0.5 text-[10px] font-medium opacity-80 tabular-nums">
+                +{pickups} −{dropoffs}
+              </div>
+            )}
           </button>
         );
       })}
