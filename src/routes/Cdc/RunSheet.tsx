@@ -6,11 +6,12 @@ import {
   expectedAlightingAt,
   expectedBoardingAt,
   groupedBoardingAt,
-  onBoardAfter,
+  ledgerSnapshot,
   setBoardedCountAt,
 } from '../../lib/cdc/tally';
 import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, RunState, StopCode } from '../../lib/cdc/types';
+import { ManifestSummary } from './SummaryCard';
 
 export default function RunSheet() {
   const navigate = useNavigate();
@@ -30,7 +31,6 @@ export default function RunSheet() {
 
   const stops = ROUTES[state.routeCode].stops;
   const currentStop = stops[state.currentStopIndex];
-  const onBoard = onBoardAfter(state.passengers, state.routeCode, state.currentStopIndex);
   const boarding = expectedBoardingAt(state.passengers, currentStop);
   const alighting = expectedAlightingAt(state.passengers, currentStop);
 
@@ -103,16 +103,32 @@ export default function RunSheet() {
         </Link>
       </header>
 
+      <div className="sticky top-2 z-10">
+        <ManifestSummary
+          ledger={ledgerSnapshot(state.passengers, state.routeCode, state.currentStopIndex)}
+          headCount={
+            state.currentStopIndex === 0
+              ? {
+                  label: `Head count at ${STOP_NAMES[currentStop]}`,
+                  count: state.passengers.filter(
+                    (p) =>
+                      p.joinStop === currentStop &&
+                      (p.status === 'boarded' || p.status === 'walkup'),
+                  ).length,
+                  max: state.passengers.filter((p) => p.joinStop === currentStop).length,
+                  onSet: (n) =>
+                    updatePassengers((prev) => setBoardedCountAt(prev, currentStop, n)),
+                }
+              : undefined
+          }
+        />
+      </div>
+
       <StopCarousel
         stops={stops}
         currentIndex={state.currentStopIndex}
         onJump={jumpTo}
       />
-
-      <div className="rounded-2xl bg-slate-800 p-3 text-center">
-        <div className="text-xs uppercase text-slate-400">On board after {STOP_NAMES[currentStop]}</div>
-        <div className="text-counter text-emerald-400">{onBoard}</div>
-      </div>
 
       <BoardingSection
         passengers={state.passengers}
@@ -120,7 +136,6 @@ export default function RunSheet() {
         currentStop={currentStop}
         routeCode={state.routeCode}
         onSet={setPassenger}
-        onUpdatePassengers={updatePassengers}
         onWalkUp={addWalkUp}
         stops={stops}
       />
@@ -185,7 +200,6 @@ function BoardingSection({
   currentStop,
   routeCode,
   onSet,
-  onUpdatePassengers,
   onWalkUp,
   stops,
 }: {
@@ -194,7 +208,6 @@ function BoardingSection({
   currentStop: StopCode;
   routeCode: RouteCode;
   onSet: (id: string, patch: Partial<Passenger>) => void;
-  onUpdatePassengers: (updater: (prev: Passenger[]) => Passenger[]) => void;
   onWalkUp: (name: string, dest: StopCode) => void;
   stops: StopCode[];
 }) {
@@ -214,13 +227,6 @@ function BoardingSection({
   ).length;
   const boardingGroups = groupedBoardingAt(passengers, currentStop, routeCode);
   const isFirstStop = stops[0] === currentStop;
-  const walkupsHere = boarding.filter((p) => p.status === 'walkup').length;
-
-  function setBoardedTotalHere(total: number) {
-    const clamped = Math.max(0, Math.min(boarding.length, total));
-    const manifestBoarded = Math.max(0, clamped - walkupsHere);
-    onUpdatePassengers((prev) => setBoardedCountAt(prev, currentStop, manifestBoarded));
-  }
 
   return (
     <section className="rounded-2xl bg-slate-800 p-3">
@@ -235,42 +241,6 @@ function BoardingSection({
       </h2>
       {boarding.length === 0 && !isFirstStop && (
         <p className="text-sm text-slate-400">No expected boardings here.</p>
-      )}
-
-      {isFirstStop && boarding.length > 0 && (
-        <div className="mb-3 flex flex-col gap-3 rounded-2xl bg-slate-900 p-4">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-            Terminal stop — V/Line staff is crossing the manifest. Enter the boarded total.
-          </p>
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => setBoardedTotalHere(boardedHere - 1)}
-              disabled={boardedHere <= 0}
-              aria-label="One fewer boarded"
-              className="h-14 w-14 shrink-0 rounded-2xl bg-slate-700 text-3xl font-black text-slate-100 active:bg-slate-600 disabled:opacity-40"
-            >
-              −
-            </button>
-            <div className="flex flex-1 items-baseline justify-center gap-2">
-              <span className="text-5xl font-black tabular-nums text-emerald-300">{boardedHere}</span>
-              <span className="text-2xl font-bold text-slate-500">/</span>
-              <span className="text-3xl font-bold tabular-nums text-slate-300">{boarding.length}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setBoardedTotalHere(boardedHere + 1)}
-              disabled={boardedHere >= boarding.length}
-              aria-label="One more boarded"
-              className="h-14 w-14 shrink-0 rounded-2xl bg-emerald-500 text-3xl font-black text-slate-900 active:bg-emerald-400 disabled:opacity-40"
-            >
-              +
-            </button>
-          </div>
-          <p className="text-center text-xs text-slate-400">
-            No-shows: {boarding.length - boardedHere}
-          </p>
-        </div>
       )}
 
       {boarding.length > 0 && (

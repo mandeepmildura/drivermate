@@ -6,11 +6,12 @@ import {
   expectedAlightingAt,
   expectedBoardingAt,
   groupedBoardingAt,
+  ledgerSnapshot,
   setBoardedCountAt,
-  totalServiceBoardings,
 } from '../../lib/cdc/tally';
 import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, RunState, StopCode } from '../../lib/cdc/types';
+import { ManifestSummary } from './SummaryCard';
 import { CountBadge, SeatPill } from './ui';
 
 type Props = {
@@ -58,10 +59,6 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
   }
 
   const passengers = state.passengers;
-  const onBoardCount = passengers.filter(
-    (p) => p.status === 'boarded' || p.status === 'walkup',
-  ).length;
-  const totalBoardings = totalServiceBoardings(passengers);
   const boarding = currentStop ? expectedBoardingAt(passengers, currentStop) : [];
   const boardingGroups = currentStop
     ? groupedBoardingAt(passengers, currentStop, expectedRouteCode)
@@ -74,6 +71,10 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
   ).length;
   const isFirstStop = !!currentStop && ROUTES[expectedRouteCode].stops[0] === currentStop;
   const walkupsHere = boarding.filter((p) => p.status === 'walkup').length;
+  const currentStopIndex = currentStop
+    ? ROUTES[expectedRouteCode].stops.indexOf(currentStop)
+    : 0;
+  const ledger = ledgerSnapshot(passengers, expectedRouteCode, Math.max(0, currentStopIndex));
 
   function setBoardedTotalHere(total: number) {
     if (!currentStop) return;
@@ -142,34 +143,27 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
         style={{ boxShadow: `inset 3px 0 0 0 ${theme.edgeColor}` }}
         aria-label="Expand V/Line panel"
       >
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-3">
             <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
               <span className={`rounded px-1.5 py-0.5 text-[10px] ${theme.badge}`}>
                 {expectedRouteCode}
               </span>
               Next stop
             </p>
-            <p className="truncate text-base font-bold text-slate-100">
-              {stopLabel}
-              {currentStop && (
-                <span className="ml-2 text-xs font-medium text-slate-400">
-                  ↑{boardedHere}/{boarding.length} ↓{alighting.length}
-                </span>
-              )}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-baseline gap-3">
-            <div className="text-right">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                On bus
-              </p>
-              <p className="text-xl font-black tabular-nums text-emerald-400">{onBoardCount}</p>
-            </div>
             <span className="text-lg text-slate-500" aria-hidden>
               ›
             </span>
           </div>
+          <p className="truncate text-base font-bold text-slate-100">
+            {stopLabel}
+            {currentStop && (
+              <span className="ml-2 text-xs font-medium text-slate-400">
+                ↑{boardedHere}/{boarding.length} ↓{alighting.length}
+              </span>
+            )}
+          </p>
+          <ManifestSummary ledger={ledger} variant="compact" />
         </div>
       </button>
     );
@@ -193,28 +187,30 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
             {currentStop ? STOP_NAMES[currentStop] : '—'}
           </h2>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              On bus
-            </p>
-            <p className="text-2xl font-black tabular-nums text-emerald-400">{onBoardCount}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              Total
-            </p>
-            <p className="text-base font-bold text-slate-300">{totalBoardings}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setExpanded(false)}
-            aria-label="Close panel"
-            className="rounded-full bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-100 active:bg-slate-600"
-          >
-            ▾
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          aria-label="Close panel"
+          className="rounded-full bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-100 active:bg-slate-600"
+        >
+          ▾
+        </button>
+      </div>
+
+      <div className="px-4 pb-2">
+        <ManifestSummary
+          ledger={ledger}
+          headCount={
+            isFirstStop && boarding.length > 0
+              ? {
+                  label: `Head count at ${STOP_NAMES[currentStop!]}`,
+                  count: boardedHere,
+                  max: boarding.length,
+                  onSet: setBoardedTotalHere,
+                }
+              : undefined
+          }
+        />
       </div>
 
       {currentStop && (
@@ -266,46 +262,6 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
                 >
                   Add walk-up
                 </button>
-              </div>
-            )}
-
-            {isFirstStop && boarding.length > 0 && (
-              <div className="mb-3 flex flex-col gap-3 rounded-2xl bg-slate-800 p-4">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                  Terminal stop — V/Line staff is crossing the manifest. Enter the boarded total.
-                </p>
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setBoardedTotalHere(boardedHere - 1)}
-                    disabled={boardedHere <= 0}
-                    aria-label="One fewer boarded"
-                    className="h-14 w-14 shrink-0 rounded-2xl bg-slate-700 text-3xl font-black text-slate-100 active:bg-slate-600 disabled:opacity-40"
-                  >
-                    −
-                  </button>
-                  <div className="flex flex-1 items-baseline justify-center gap-2">
-                    <span className="text-5xl font-black tabular-nums text-emerald-300">
-                      {boardedHere}
-                    </span>
-                    <span className="text-2xl font-bold text-slate-500">/</span>
-                    <span className="text-3xl font-bold tabular-nums text-slate-300">
-                      {boarding.length}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setBoardedTotalHere(boardedHere + 1)}
-                    disabled={boardedHere >= boarding.length}
-                    aria-label="One more boarded"
-                    className="h-14 w-14 shrink-0 rounded-2xl bg-emerald-500 text-3xl font-black text-slate-900 active:bg-emerald-400 disabled:opacity-40"
-                  >
-                    +
-                  </button>
-                </div>
-                <p className="text-center text-xs text-slate-400">
-                  No-shows: {boarding.length - boardedHere}
-                </p>
               </div>
             )}
 
