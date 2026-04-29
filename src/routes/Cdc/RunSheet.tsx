@@ -184,45 +184,59 @@ function BoardingSection({
     setWalkOpen(false);
   }
 
+  const boardedHere = boarding.filter(
+    (p) => p.status === 'boarded' || p.status === 'walkup',
+  ).length;
+
   return (
     <section className="rounded-2xl bg-slate-800 p-3">
-      <h2 className="mb-2 text-base font-bold">Boarding at {STOP_NAMES[currentStop]} ({boarding.length})</h2>
+      <h2 className="mb-2 flex items-baseline justify-between gap-2 text-base font-bold">
+        <span>Boarding at {STOP_NAMES[currentStop]}</span>
+        <span className="tabular-nums text-emerald-300">
+          {boardedHere}/{boarding.length}
+          <span className="ml-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            on · booked
+          </span>
+        </span>
+      </h2>
       {boarding.length === 0 && <p className="text-sm text-slate-400">No expected boardings here.</p>}
       <ul className="flex flex-col gap-2">
-        {boarding.map((p) => (
-          <li key={p.id} className="rounded-xl bg-slate-900 p-2">
-            <div className="flex items-baseline justify-between">
-              <div>
-                <span className="font-mono font-bold">{p.seat || '—'}</span>{' '}
-                <span>{p.name}</span>{' '}
-                {p.priority && <span className="text-amber-400">★</span>}
-              </div>
-              <div className="text-xs text-slate-400">
-                → {STOP_NAMES[p.leaveStop]}
-              </div>
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
+        {boarding.map((p) => {
+          const isOn = p.status === 'boarded' || p.status === 'walkup';
+          return (
+            <li key={p.id}>
               <button
                 type="button"
-                onClick={() => onSet(p.id, { status: p.status === 'boarded' ? 'expected' : 'boarded' })}
-                className={`min-h-touch rounded-xl px-3 py-2 text-lg font-bold ${
-                  p.status === 'boarded' ? 'bg-emerald-500 text-slate-900' : 'bg-slate-700 text-slate-100'
+                onClick={() => onSet(p.id, { status: isOn ? 'expected' : 'boarded' })}
+                aria-pressed={isOn}
+                className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
+                  isOn
+                    ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
+                    : 'bg-slate-900 text-slate-100 active:bg-slate-800'
                 }`}
               >
-                ✓ Boarded
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-black ${
+                    isOn
+                      ? 'bg-slate-900/15 text-slate-900'
+                      : 'border-2 border-slate-600 text-transparent'
+                  }`}
+                  aria-hidden
+                >
+                  ✓
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="font-mono font-bold">{p.seat || '—'}</span>{' '}
+                  <span className="font-bold">{p.name}</span>{' '}
+                  {p.priority && <span className="text-amber-400">★</span>}
+                </span>
+                <span className={`shrink-0 text-xs ${isOn ? 'text-slate-700' : 'text-slate-400'}`}>
+                  → {STOP_NAMES[p.leaveStop]}
+                </span>
               </button>
-              <button
-                type="button"
-                onClick={() => onSet(p.id, { status: p.status === 'noshow' ? 'expected' : 'noshow' })}
-                className={`min-h-touch rounded-xl px-3 py-2 text-lg font-bold ${
-                  p.status === 'noshow' ? 'bg-red-600 text-slate-100' : 'bg-slate-700 text-slate-100'
-                }`}
-              >
-                ✕ No-show
-              </button>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
       {walkOpen ? (
