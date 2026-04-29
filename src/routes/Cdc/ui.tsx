@@ -2,9 +2,13 @@
 // V/Line panel and the manifest review wizard so a seat number reads the same
 // in both places.
 
-export function SeatPill({ seat }: { seat: string }) {
+export function SeatPill({ seat, tone = 'default' }: { seat: string; tone?: 'default' | 'inverse' }) {
+  const cls =
+    tone === 'inverse'
+      ? 'bg-slate-900/15 text-slate-900'
+      : 'bg-emerald-500/20 text-emerald-300';
   return (
-    <span className="inline-flex h-7 min-w-[2.5rem] shrink-0 items-center justify-center rounded-full bg-emerald-500/20 px-2 font-mono text-xs font-bold text-emerald-300">
+    <span className={`inline-flex h-7 min-w-[2.5rem] shrink-0 items-center justify-center rounded-full px-2 font-mono text-xs font-bold ${cls}`}>
       {seat || '—'}
     </span>
   );

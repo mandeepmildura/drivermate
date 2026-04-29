@@ -3,9 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ALL_STOP_CODES, ROUTES, STOP_NAMES } from '../../lib/cdc/stops';
 import { clearRunState, loadRunState, newId, saveRunState } from '../../lib/cdc/state';
 import { stopSummary } from '../../lib/cdc/tally';
+import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
 import { getSupabase } from '../../lib/supabase';
-import { CountBadge, SeatPill } from './ui';
 
 type ImageItem = { id: string; file: File; previewUrl: string; base64: string; mediaType: string };
 
@@ -42,7 +42,7 @@ export default function ManifestUpload() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>(existing?.passengers ?? []);
-  const [reviewIndex, setReviewIndex] = useState<number | null>(null);
+  const [showAllRows, setShowAllRows] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(ROUTE_KEY, routeCode);
@@ -130,7 +130,6 @@ export default function ManifestUpload() {
         })
         .filter((p): p is Passenger => p !== null);
       setPassengers(next);
-      if (next.length > 0) setReviewIndex(0);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -187,50 +186,20 @@ export default function ManifestUpload() {
   const summary = stopSummary(passengers, routeCode);
   const stopOptions = ROUTES[routeCode].stops;
 
-  const activeStops = useMemo(
-    () =>
-      stopOptions.filter((s) =>
-        passengers.some((p) => p.joinStop === s || p.leaveStop === s),
-      ),
-    [stopOptions, passengers],
-  );
-  const reviewing = reviewIndex !== null && activeStops.length > 0;
-  const currentReviewStop = reviewing ? activeStops[Math.min(reviewIndex!, activeStops.length - 1)] : null;
-  const reviewBoarding = currentReviewStop
-    ? passengers.filter((p) => p.joinStop === currentReviewStop)
-    : [];
-  const reviewAlighting = currentReviewStop
-    ? passengers.filter((p) => p.leaveStop === currentReviewStop)
-    : [];
-
-  function nextReview() {
-    if (reviewIndex === null) return;
-    if (reviewIndex >= activeStops.length - 1) {
-      setReviewIndex(null);
-      return;
+  const flagged = useMemo(() => {
+    const seatCounts = new Map<string, number>();
+    for (const p of passengers) {
+      if (p.seat) seatCounts.set(p.seat, (seatCounts.get(p.seat) ?? 0) + 1);
     }
-    setReviewIndex(reviewIndex + 1);
-  }
-  function prevReview() {
-    if (reviewIndex === null || reviewIndex === 0) return;
-    setReviewIndex(reviewIndex - 1);
-  }
-  function addBoardingHere(stop: StopCode) {
-    const stops = ROUTES[routeCode].stops;
-    setPassengers((prev) => [
-      ...prev,
-      {
-        id: newId(),
-        seat: '',
-        name: '',
-        joinStop: stop,
-        leaveStop: stops[stops.length - 1],
-        ticketType: 'eTicket',
-        priority: false,
-        status: 'expected',
-      },
-    ]);
-  }
+    return passengers
+      .map((p) => {
+        const reasons: string[] = [];
+        if (!p.seat) reasons.push('missing seat');
+        if (p.seat && (seatCounts.get(p.seat) ?? 0) > 1) reasons.push('duplicate seat');
+        return reasons.length > 0 ? { passenger: p, reasons } : null;
+      })
+      .filter((x): x is { passenger: Passenger; reasons: string[] } => x !== null);
+  }, [passengers]);
 
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-4">
@@ -253,14 +222,14 @@ export default function ManifestUpload() {
       )}
 
       <div className="grid grid-cols-2 gap-2">
-        {(['C012', 'C011'] as RouteCode[]).map((code) => (
+        {!routeQuery && (['C012', 'C011'] as RouteCode[]).map((code) => (
           <button
             key={code}
             type="button"
             onClick={() => setRouteCode(code)}
             className={`min-h-touch rounded-2xl px-4 py-3 text-left text-base font-bold ${
               routeCode === code
-                ? 'bg-emerald-500 text-slate-900'
+                ? ROUTE_THEMES[code].solid
                 : 'bg-slate-800 text-slate-100 active:bg-slate-700'
             }`}
           >
@@ -268,6 +237,14 @@ export default function ManifestUpload() {
             <div className="text-xs font-medium opacity-80">{ROUTES[code].label.replace(`${code} `, '')}</div>
           </button>
         ))}
+        {routeQuery && (
+          <div className={`col-span-2 rounded-2xl px-4 py-3 text-base font-bold ${ROUTE_THEMES[routeCode].badge}`}>
+            <div>{routeCode}</div>
+            <div className="text-xs font-medium opacity-80">
+              {ROUTES[routeCode].label.replace(`${routeCode} `, '')}
+            </div>
+          </div>
+        )}
       </div>
 
       <section className="rounded-2xl bg-slate-800 p-3">
@@ -310,136 +287,115 @@ export default function ManifestUpload() {
         {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
       </section>
 
-      {reviewing && currentReviewStop && (
+      {passengers.length > 0 && (
         <section className="rounded-2xl bg-slate-800 p-4">
-          <div className="mb-4 flex items-baseline justify-between gap-2">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                Review stop {reviewIndex! + 1} of {activeStops.length}
-              </p>
-              <h2 className="text-3xl font-black leading-tight">{STOP_NAMES[currentReviewStop]}</h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => setReviewIndex(null)}
-              className="text-xs font-bold text-slate-400 active:text-slate-200"
-            >
-              Skip review
-            </button>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-base font-bold uppercase tracking-wide text-slate-400">
+              Manifest summary
+            </h2>
+            <span className="text-3xl font-black tabular-nums text-emerald-300">
+              {passengers.length}
+              <span className="ml-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                booked
+              </span>
+            </span>
           </div>
-
-          <div className="mb-4">
-            <h3 className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-emerald-300">
-              Boarding here <CountBadge n={reviewBoarding.length} tone="emerald" />
-            </h3>
-            {reviewBoarding.length === 0 ? (
-              <p className="text-sm text-slate-500">
-                No-one boarding at {STOP_NAMES[currentReviewStop]}.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {reviewBoarding.map((p) => (
-                  <li key={p.id} className="rounded-xl bg-slate-900 p-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={p.seat}
-                        placeholder="Seat"
-                        onChange={(e) =>
-                          updatePassenger(p.id, { seat: e.target.value.toUpperCase() })
-                        }
-                        className="h-9 w-16 rounded-lg bg-slate-800 px-2 text-center font-mono text-sm font-bold text-emerald-300"
-                      />
-                      <input
-                        type="text"
-                        value={p.name}
-                        placeholder="Name"
-                        onChange={(e) => updatePassenger(p.id, { name: e.target.value })}
-                        className="h-9 flex-1 rounded-lg bg-slate-800 px-3 text-sm font-bold text-slate-100"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removePassenger(p.id)}
-                        className="h-9 w-9 shrink-0 rounded-lg bg-slate-800 text-red-300 active:bg-slate-700"
-                        aria-label="Remove passenger"
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <select
-                      value={p.leaveStop}
-                      onChange={(e) =>
-                        updatePassenger(p.id, { leaveStop: e.target.value as StopCode })
-                      }
-                      className="mt-2 h-9 w-full rounded-lg bg-slate-800 px-2 text-xs"
-                    >
-                      {stopOptions.map((s) => (
-                        <option key={s} value={s}>
-                          → {STOP_NAMES[s]}
-                        </option>
-                      ))}
-                    </select>
-                    <label className="mt-2 flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold">
-                      <input
-                        type="checkbox"
-                        checked={p.priority}
-                        onChange={(e) => updatePassenger(p.id, { priority: e.target.checked })}
-                        className="h-4 w-4 accent-amber-400"
-                      />
-                      Priority boarding
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button
-              type="button"
-              onClick={() => addBoardingHere(currentReviewStop)}
-              className="mt-3 text-sm font-bold text-blue-300 active:text-blue-200"
-            >
-              + Add a boarder here
-            </button>
-          </div>
-
-          {reviewAlighting.length > 0 && (
-            <div className="mb-4">
-              <h3 className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-300">
-                Alighting here <CountBadge n={reviewAlighting.length} tone="amber" />
-              </h3>
-              <ul className="flex flex-col gap-2">
-                {reviewAlighting.map((p) => (
-                  <li
-                    key={p.id}
-                    className="flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2"
-                  >
-                    <SeatPill seat={p.seat} />
-                    <span className="truncate text-sm font-bold text-slate-100">{p.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={prevReview}
-              disabled={reviewIndex === 0}
-              className="btn-secondary"
-            >
-              ← Back
-            </button>
-            <button type="button" onClick={nextReview} className="btn-primary">
-              {reviewIndex! >= activeStops.length - 1 ? 'Done — to summary' : 'Next stop →'}
-            </button>
-          </div>
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+            Pickups / dropoffs by stop
+          </h3>
+          <ul className="grid grid-cols-2 gap-1 text-sm sm:grid-cols-3">
+            {summary
+              .filter((s) => s.pickups > 0 || s.dropoffs > 0)
+              .map((s) => (
+                <li key={s.stop} className="rounded bg-slate-900 px-2 py-1">
+                  <span className="font-bold">{STOP_NAMES[s.stop]}</span>
+                  <div className="text-xs">
+                    <span className="text-emerald-400">+{s.pickups}</span>{' '}
+                    <span className="text-amber-400">−{s.dropoffs}</span>
+                  </div>
+                </li>
+              ))}
+          </ul>
         </section>
       )}
 
-      {passengers.length > 0 && !reviewing && (
-        <section className="rounded-2xl bg-slate-800 p-3">
-          <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="text-base font-bold">Passengers ({passengers.length})</h2>
+      {flagged.length > 0 && (
+        <section className="rounded-2xl bg-amber-500/10 p-3 ring-1 ring-amber-500/30">
+          <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-amber-200">
+            {flagged.length} row{flagged.length === 1 ? '' : 's'} need a quick fix
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {flagged.map(({ passenger: p, reasons }) => (
+              <li key={p.id} className="rounded-xl bg-slate-900 p-3">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-amber-300">
+                  {reasons.join(' · ')}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={p.seat}
+                    placeholder="Seat"
+                    onChange={(e) =>
+                      updatePassenger(p.id, { seat: e.target.value.toUpperCase() })
+                    }
+                    className="h-9 w-20 rounded-lg bg-slate-800 px-2 text-center font-mono text-sm font-bold text-emerald-300"
+                  />
+                  <input
+                    type="text"
+                    value={p.name}
+                    placeholder="Name"
+                    onChange={(e) => updatePassenger(p.id, { name: e.target.value })}
+                    className="h-9 flex-1 rounded-lg bg-slate-800 px-3 text-sm font-bold text-slate-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePassenger(p.id)}
+                    className="h-9 w-9 shrink-0 rounded-lg bg-slate-800 text-red-300 active:bg-slate-700"
+                    aria-label="Remove passenger"
+                  >
+                    ×
+                  </button>
+                </div>
+                <select
+                  value={p.leaveStop}
+                  onChange={(e) =>
+                    updatePassenger(p.id, { leaveStop: e.target.value as StopCode })
+                  }
+                  className="mt-2 h-9 w-full rounded-lg bg-slate-800 px-2 text-xs"
+                >
+                  {stopOptions.map((s) => (
+                    <option key={s} value={s}>
+                      → {STOP_NAMES[s]}
+                    </option>
+                  ))}
+                </select>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {passengers.length > 0 && (
+        <button
+          type="button"
+          onClick={startRun}
+          disabled={passengers.length === 0}
+          className="btn-primary"
+        >
+          {returnTo ? 'Confirm & back to run' : 'Confirm & start run'}
+        </button>
+      )}
+
+      {passengers.length > 0 && (
+        <details
+          open={showAllRows}
+          onToggle={(e) => setShowAllRows((e.target as HTMLDetailsElement).open)}
+          className="rounded-2xl bg-slate-800 p-3"
+        >
+          <summary className="cursor-pointer text-sm font-bold text-slate-300">
+            Edit all rows ({passengers.length})
+          </summary>
+          <div className="mt-3 flex items-baseline justify-end">
             <button type="button" onClick={addBlankPassenger} className="text-sm text-blue-300 underline">
               + Add manually
             </button>
@@ -524,40 +480,7 @@ export default function ManifestUpload() {
               </tbody>
             </table>
           </div>
-        </section>
-      )}
-
-      {passengers.length > 0 && !reviewing && (
-        <section className="rounded-2xl bg-slate-800 p-3">
-          <h2 className="mb-2 text-base font-bold">Pickups / dropoffs by stop</h2>
-          <ul className="grid grid-cols-2 gap-1 text-sm sm:grid-cols-3">
-            {summary
-              .filter((s) => s.pickups > 0 || s.dropoffs > 0)
-              .map((s) => (
-                <li key={s.stop} className="rounded bg-slate-900 px-2 py-1">
-                  <span className="font-bold">{STOP_NAMES[s.stop]}</span>
-                  <div className="text-xs">
-                    <span className="text-emerald-400">+{s.pickups}</span>{' '}
-                    <span className="text-amber-400">−{s.dropoffs}</span>
-                  </div>
-                </li>
-              ))}
-          </ul>
-          {summary.every((s) => s.pickups === 0 && s.dropoffs === 0) && (
-            <p className="text-sm text-slate-400">No passengers yet.</p>
-          )}
-        </section>
-      )}
-
-      {!reviewing && (
-        <button
-          type="button"
-          onClick={startRun}
-          disabled={passengers.length === 0}
-          className="btn-primary"
-        >
-          {returnTo ? 'Confirm & back to run' : 'Confirm & start run'}
-        </button>
+        </details>
       )}
 
       <details className="rounded-2xl bg-slate-800 p-3 text-sm text-slate-300">

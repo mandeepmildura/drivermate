@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Login from './routes/Login';
 import Register from './routes/Register';
+import ServicePicker from './routes/ServicePicker';
 import RoutePicker from './routes/RoutePicker';
 import BusConfirm from './routes/BusConfirm';
 import Run from './routes/Run';
@@ -32,6 +33,14 @@ export default function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+            path="/services"
+            element={
+              <RequireDriver>
+                <ServicePicker />
+              </RequireDriver>
+            }
+          />
           <Route
             path="/routes"
             element={

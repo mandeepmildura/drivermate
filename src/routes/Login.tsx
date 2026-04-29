@@ -12,7 +12,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (session && driver) navigate('/routes', { replace: true });
+    if (session && driver) navigate('/services', { replace: true });
   }, [session, driver, navigate]);
 
   async function handleSubmit(e: FormEvent) {
