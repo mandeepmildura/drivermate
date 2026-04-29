@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupedBoardingAt } from './tally';
+import { groupedBoardingAt, setBoardedCountAt } from './tally';
 import type { Passenger, RouteCode, StopCode } from './types';
 
 function pax(seat: string, joinStop: StopCode, leaveStop: StopCode): Passenger {
@@ -62,6 +62,43 @@ describe('groupedBoardingAt', () => {
     expect(groups.map((g) => g.destination)).toEqual(['BXG', 'BNN']);
   });
 
+});
+
+describe('setBoardedCountAt', () => {
+  it('marks the lowest-seat boarders boarded, rest expected', () => {
+    const passengers = [
+      pax('5', FIRST_STOP, 'BXG'),
+      pax('1', FIRST_STOP, 'BXG'),
+      pax('3', FIRST_STOP, 'SWH'),
+      pax('2', FIRST_STOP, 'BXG'),
+    ];
+    const next = setBoardedCountAt(passengers, FIRST_STOP, 2);
+    const byId = Object.fromEntries(next.map((p) => [p.seat, p.status]));
+    expect(byId['1']).toBe('boarded');
+    expect(byId['2']).toBe('boarded');
+    expect(byId['3']).toBe('expected');
+    expect(byId['5']).toBe('expected');
+  });
+
+  it('does not touch walk-ups or alighted rows', () => {
+    const walkup: Passenger = { ...pax('99', FIRST_STOP, 'BXG'), status: 'walkup' };
+    const alighted: Passenger = { ...pax('98', FIRST_STOP, 'BXG'), status: 'alighted' };
+    const passengers = [pax('1', FIRST_STOP, 'BXG'), walkup, alighted];
+    const next = setBoardedCountAt(passengers, FIRST_STOP, 1);
+    expect(next.find((p) => p.seat === '99')!.status).toBe('walkup');
+    expect(next.find((p) => p.seat === '98')!.status).toBe('alighted');
+    expect(next.find((p) => p.seat === '1')!.status).toBe('boarded');
+  });
+
+  it('clamps count above the available rows', () => {
+    const passengers = [pax('1', FIRST_STOP, 'BXG'), pax('2', FIRST_STOP, 'BXG')];
+    const next = setBoardedCountAt(passengers, FIRST_STOP, 99);
+    expect(next.every((p) => p.status === 'boarded')).toBe(true);
+  });
+
+});
+
+describe('groupedBoardingAt seat ordering', () => {
   it('sorts seats numerically within a group, empty seats last', () => {
     const passengers = [
       pax('12', FIRST_STOP, 'BXG'),

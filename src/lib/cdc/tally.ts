@@ -98,6 +98,36 @@ export function totalServiceBoardings(passengers: Passenger[]): number {
     .length;
 }
 
+// At terminal stops the driver enters a boarded count rather than tapping
+// each row (V/Line staff already crossed the paper manifest). Translate that
+// count into per-row statuses by deterministically promoting the lowest seat
+// numbers to 'boarded' first, leaving the rest as 'expected' (no-show).
+// Walk-ups and already-alighted rows are left untouched.
+export function setBoardedCountAt(
+  passengers: Passenger[],
+  stop: StopCode,
+  count: number,
+): Passenger[] {
+  const seatRank = (s: string): [number, string] => {
+    const n = parseInt(s, 10);
+    return [Number.isNaN(n) ? Number.POSITIVE_INFINITY : n, s];
+  };
+  const here = passengers
+    .filter((p) => p.joinStop === stop && p.status !== 'walkup' && p.status !== 'alighted')
+    .sort((a, b) => {
+      const [an, as] = seatRank(a.seat);
+      const [bn, bs] = seatRank(b.seat);
+      if (an !== bn) return an - bn;
+      return as.localeCompare(bs);
+    });
+  const boardedIds = new Set(here.slice(0, Math.max(0, count)).map((p) => p.id));
+  return passengers.map((p) => {
+    if (p.joinStop !== stop) return p;
+    if (p.status === 'walkup' || p.status === 'alighted') return p;
+    return { ...p, status: boardedIds.has(p.id) ? 'boarded' : 'expected' };
+  });
+}
+
 export type StopSummary = { stop: StopCode; pickups: number; dropoffs: number };
 
 export function stopSummary(passengers: Passenger[], routeCode: RouteCode): StopSummary[] {

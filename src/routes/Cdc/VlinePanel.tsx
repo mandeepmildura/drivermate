@@ -6,6 +6,7 @@ import {
   expectedAlightingAt,
   expectedBoardingAt,
   groupedBoardingAt,
+  setBoardedCountAt,
   totalServiceBoardings,
 } from '../../lib/cdc/tally';
 import { ROUTE_THEMES } from '../../lib/cdc/theme';
@@ -71,6 +72,20 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
   const boardedHere = boarding.filter(
     (p) => p.status === 'boarded' || p.status === 'walkup',
   ).length;
+  const isFirstStop = !!currentStop && ROUTES[expectedRouteCode].stops[0] === currentStop;
+  const walkupsHere = boarding.filter((p) => p.status === 'walkup').length;
+
+  function setBoardedTotalHere(total: number) {
+    if (!currentStop) return;
+    const clamped = Math.max(0, Math.min(boarding.length, total));
+    const manifestBoarded = Math.max(0, clamped - walkupsHere);
+    setState((prev) =>
+      prev && {
+        ...prev,
+        passengers: setBoardedCountAt(prev.passengers, currentStop, manifestBoarded),
+      },
+    );
+  }
 
   function setPassenger(id: string, patch: Partial<Passenger>) {
     setState((prev) =>
@@ -254,72 +269,60 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
               </div>
             )}
 
-            {boarding.length === 0 ? (
-              <p className="text-sm text-slate-500">No expected boardings here.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {boardingGroups.map((group) => {
-                  const groupOn = group.passengers.filter(
-                    (p) => p.status === 'boarded' || p.status === 'walkup',
-                  ).length;
-                  return (
-                    <div key={group.destination ?? 'all'} className="flex flex-col gap-2">
-                      {group.destination && (
-                        <div className="flex items-baseline justify-between px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                          <span>→ {STOP_NAMES[group.destination]}</span>
-                          <span className="tabular-nums text-slate-300">
-                            {groupOn}/{group.passengers.length}
-                          </span>
-                        </div>
-                      )}
-                      <ul className="flex flex-col gap-2">
-                        {group.passengers.map((p) => {
-                          const isOn = p.status === 'boarded' || p.status === 'walkup';
-                          return (
-                            <li key={p.id}>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setPassenger(p.id, {
-                                    status: isOn ? 'expected' : 'boarded',
-                                  })
-                                }
-                                aria-pressed={isOn}
-                                className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
-                                  isOn
-                                    ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
-                                    : 'bg-slate-800 text-slate-100 active:bg-slate-700'
-                                }`}
-                              >
-                                <span
-                                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-black ${
-                                    isOn
-                                      ? 'bg-slate-900/15 text-slate-900'
-                                      : 'border-2 border-slate-600 text-transparent'
-                                  }`}
-                                  aria-hidden
-                                >
-                                  ✓
-                                </span>
-                                <SeatPill seat={p.seat} tone={isOn ? 'inverse' : 'default'} />
-                                <span className="min-w-0 flex-1 truncate text-sm">
-                                  <span className="font-bold">{p.name}</span>{' '}
-                                  <span
-                                    className={`text-xs ${isOn ? 'text-slate-700' : 'text-slate-400'}`}
-                                  >
-                                    → {STOP_NAMES[p.leaveStop]}
-                                  </span>
-                                  {p.priority && <span className="ml-1 text-amber-400">★</span>}
-                                </span>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  );
-                })}
+            {isFirstStop && boarding.length > 0 && (
+              <div className="mb-3 flex flex-col gap-3 rounded-2xl bg-slate-800 p-4">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  Terminal stop — V/Line staff is crossing the manifest. Enter the boarded total.
+                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBoardedTotalHere(boardedHere - 1)}
+                    disabled={boardedHere <= 0}
+                    aria-label="One fewer boarded"
+                    className="h-14 w-14 shrink-0 rounded-2xl bg-slate-700 text-3xl font-black text-slate-100 active:bg-slate-600 disabled:opacity-40"
+                  >
+                    −
+                  </button>
+                  <div className="flex flex-1 items-baseline justify-center gap-2">
+                    <span className="text-5xl font-black tabular-nums text-emerald-300">
+                      {boardedHere}
+                    </span>
+                    <span className="text-2xl font-bold text-slate-500">/</span>
+                    <span className="text-3xl font-bold tabular-nums text-slate-300">
+                      {boarding.length}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setBoardedTotalHere(boardedHere + 1)}
+                    disabled={boardedHere >= boarding.length}
+                    aria-label="One more boarded"
+                    className="h-14 w-14 shrink-0 rounded-2xl bg-emerald-500 text-3xl font-black text-slate-900 active:bg-emerald-400 disabled:opacity-40"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-center text-xs text-slate-400">
+                  No-shows: {boarding.length - boardedHere}
+                </p>
               </div>
+            )}
+
+            {boarding.length === 0 && !isFirstStop && (
+              <p className="text-sm text-slate-500">No expected boardings here.</p>
+            )}
+            {boarding.length > 0 && (
+              isFirstStop ? (
+                <details className="rounded-xl bg-slate-800/40 p-3">
+                  <summary className="cursor-pointer text-sm font-bold text-slate-300">
+                    Edit list (per-row tap)
+                  </summary>
+                  <div className="mt-3">{renderBoardingGroups(boardingGroups, setPassenger)}</div>
+                </details>
+              ) : (
+                renderBoardingGroups(boardingGroups, setPassenger)
+              )
             )}
           </section>
 
@@ -377,6 +380,73 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
           </section>
         </>
       )}
+    </div>
+  );
+}
+
+function renderBoardingGroups(
+  groups: ReturnType<typeof groupedBoardingAt>,
+  setPassenger: (id: string, patch: Partial<Passenger>) => void,
+) {
+  return (
+    <div className="flex flex-col gap-3">
+      {groups.map((group) => {
+        const groupOn = group.passengers.filter(
+          (p) => p.status === 'boarded' || p.status === 'walkup',
+        ).length;
+        return (
+          <div key={group.destination ?? 'all'} className="flex flex-col gap-2">
+            {group.destination && (
+              <div className="flex items-baseline justify-between px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                <span>→ {STOP_NAMES[group.destination]}</span>
+                <span className="tabular-nums text-slate-300">
+                  {groupOn}/{group.passengers.length}
+                </span>
+              </div>
+            )}
+            <ul className="flex flex-col gap-2">
+              {group.passengers.map((p) => {
+                const isOn = p.status === 'boarded' || p.status === 'walkup';
+                return (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPassenger(p.id, { status: isOn ? 'expected' : 'boarded' })
+                      }
+                      aria-pressed={isOn}
+                      className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
+                        isOn
+                          ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
+                          : 'bg-slate-800 text-slate-100 active:bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-black ${
+                          isOn
+                            ? 'bg-slate-900/15 text-slate-900'
+                            : 'border-2 border-slate-600 text-transparent'
+                        }`}
+                        aria-hidden
+                      >
+                        ✓
+                      </span>
+                      <SeatPill seat={p.seat} tone={isOn ? 'inverse' : 'default'} />
+                      <span className="min-w-0 flex-1 truncate text-sm">
+                        <span className="font-bold">{p.name}</span>{' '}
+                        <span className={`text-xs ${isOn ? 'text-slate-700' : 'text-slate-400'}`}>
+                          → {STOP_NAMES[p.leaveStop]}
+                        </span>
+                        {p.priority && <span className="ml-1 text-amber-400">★</span>}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
     </div>
   );
 }
