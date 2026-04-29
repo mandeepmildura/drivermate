@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupedBoardingAt, setBoardedCountAt } from './tally';
+import { groupedBoardingAt, ledgerSnapshot, setBoardedCountAt } from './tally';
 import type { Passenger, RouteCode, StopCode } from './types';
 
 function pax(seat: string, joinStop: StopCode, leaveStop: StopCode): Passenger {
@@ -96,6 +96,48 @@ describe('setBoardedCountAt', () => {
     expect(next.every((p) => p.status === 'boarded')).toBe(true);
   });
 
+});
+
+describe('ledgerSnapshot', () => {
+  it('counts an untouched manifest as all booked, none on bus', () => {
+    const passengers = [
+      pax('1', FIRST_STOP, 'BXG'),
+      pax('2', FIRST_STOP, 'BXG'),
+      pax('3', FIRST_STOP, 'SWH'),
+    ];
+    const ledger = ledgerSnapshot(passengers, C012, 0);
+    expect(ledger.booked).toBe(3);
+    expect(ledger.onBus).toBe(0);
+    // At stop index 0 with all 'expected', the first-stop joiners count as
+    // no-shows once the driver enters the head count.
+    expect(ledger.noShows).toBe(3);
+    expect(ledger.walkUps).toBe(0);
+  });
+
+  it('counts boarded as on-bus and walk-ups separately', () => {
+    const passengers: Passenger[] = [
+      { ...pax('1', FIRST_STOP, 'BXG'), status: 'boarded' },
+      { ...pax('2', FIRST_STOP, 'BXG'), status: 'boarded' },
+      { ...pax('3', FIRST_STOP, 'BXG'), status: 'expected' },
+      { ...pax('99', FIRST_STOP, 'BXG'), status: 'walkup' },
+    ];
+    const ledger = ledgerSnapshot(passengers, C012, 0);
+    expect(ledger.booked).toBe(4);
+    expect(ledger.onBus).toBe(3); // 2 boarded + 1 walkup
+    expect(ledger.noShows).toBe(1);
+    expect(ledger.walkUps).toBe(1);
+  });
+
+  it('drops alighted passengers from on-bus', () => {
+    const passengers: Passenger[] = [
+      { ...pax('1', FIRST_STOP, 'BNN'), status: 'alighted' },
+      { ...pax('2', FIRST_STOP, 'BXG'), status: 'boarded' },
+    ];
+    // After Bannerton — the alighted passenger has gotten off
+    const stopsList = ['MQL', 'EUS', 'RBC', 'BNN'];
+    const ledger = ledgerSnapshot(passengers, C012, stopsList.length - 1);
+    expect(ledger.onBus).toBe(1);
+  });
 });
 
 describe('groupedBoardingAt seat ordering', () => {

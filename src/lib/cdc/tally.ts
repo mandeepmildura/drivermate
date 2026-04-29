@@ -130,6 +130,46 @@ export function setBoardedCountAt(
 
 export type StopSummary = { stop: StopCode; pickups: number; dropoffs: number };
 
+// The four-number ledger that powers the always-visible Manifest Summary.
+// Pre-departure (currentStopIndex = 0 at first stop): "no-shows" counts
+// any first-stop passenger left as 'expected' once the driver enters a head
+// count. Mid-trip: "no-shows" sums everyone whose join stop has been reached
+// without being marked boarded. "On bus" only counts those still riding
+// (boarded or walk-up, not yet alighted).
+export type LedgerSnapshot = {
+  booked: number;
+  onBus: number;
+  noShows: number;
+  walkUps: number;
+};
+
+export function ledgerSnapshot(
+  passengers: Passenger[],
+  routeCode: RouteCode,
+  currentStopIndex: number,
+): LedgerSnapshot {
+  const stops = ROUTES[routeCode].stops;
+  const reachedStops = new Set(stops.slice(0, Math.max(0, currentStopIndex) + 1));
+
+  let onBus = 0;
+  let noShows = 0;
+  let walkUps = 0;
+
+  for (const p of passengers) {
+    const onBoardStatus = p.status === 'boarded' || p.status === 'walkup';
+    const leftAlready = p.status === 'alighted';
+    if (onBoardStatus && !leftAlready) {
+      onBus += 1;
+      if (p.status === 'walkup') walkUps += 1;
+    }
+    if (p.status === 'expected' && reachedStops.has(p.joinStop)) {
+      noShows += 1;
+    }
+  }
+
+  return { booked: passengers.length, onBus, noShows, walkUps };
+}
+
 export function stopSummary(passengers: Passenger[], routeCode: RouteCode): StopSummary[] {
   const stops = ROUTES[routeCode].stops;
   return stops.map((stop) => ({

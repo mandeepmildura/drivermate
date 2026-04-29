@@ -1,11 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ALL_STOP_CODES, ROUTES, STOP_NAMES } from '../../lib/cdc/stops';
-import { clearRunState, loadRunState, newId, saveRunState } from '../../lib/cdc/state';
-import { stopSummary } from '../../lib/cdc/tally';
+import {
+  clearPendingManifest,
+  clearRunState,
+  loadPendingManifest,
+  loadRunState,
+  newId,
+  savePendingManifest,
+  saveRunState,
+} from '../../lib/cdc/state';
+import { ledgerSnapshot, setBoardedCountAt, stopSummary } from '../../lib/cdc/tally';
 import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
 import { getSupabase } from '../../lib/supabase';
+import { ManifestSummary } from './SummaryCard';
 
 type ImageItem = { id: string; file: File; previewUrl: string; base64: string; mediaType: string };
 
@@ -32,21 +41,39 @@ export default function ManifestUpload() {
   const returnTo = searchParams.get('return');
   const routeQuery = searchParams.get('route');
   const existing = useMemo(loadRunState, []);
+  const pending = useMemo(loadPendingManifest, []);
   const [routeCode, setRouteCode] = useState<RouteCode>(() => {
     if (routeQuery === 'C011' || routeQuery === 'C012') return routeQuery;
     if (existing) return existing.routeCode;
+    if (pending) return pending.routeCode;
     const last = localStorage.getItem(ROUTE_KEY);
     return last === 'C011' || last === 'C012' ? last : 'C012';
   });
   const [images, setImages] = useState<ImageItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [passengers, setPassengers] = useState<Passenger[]>(existing?.passengers ?? []);
+  const [passengers, setPassengers] = useState<Passenger[]>(
+    () => existing?.passengers ?? pending?.passengers ?? [],
+  );
   const [showAllRows, setShowAllRows] = useState(false);
+  const ocrAtRef = useMemo(() => ({ value: pending?.ocrAt ?? null }), [pending]);
 
   useEffect(() => {
     localStorage.setItem(ROUTE_KEY, routeCode);
   }, [routeCode]);
+
+  // Persist the scanned manifest so a long gap (luggage, head count) doesn't
+  // lose the OCR work. Only writes pre-departure — once a run is in progress,
+  // RunState is the authoritative store.
+  useEffect(() => {
+    if (existing) return;
+    if (passengers.length === 0) {
+      clearPendingManifest();
+      return;
+    }
+    if (!ocrAtRef.value) ocrAtRef.value = new Date().toISOString();
+    savePendingManifest({ routeCode, passengers, ocrAt: ocrAtRef.value });
+  }, [passengers, routeCode, existing, ocrAtRef]);
 
   useEffect(() => {
     return () => {
@@ -174,17 +201,32 @@ export default function ManifestUpload() {
       currentStopIndex: 0,
       stopArrivals: {},
     });
+    clearPendingManifest();
     navigate(returnTo || '/cdc/run');
   }
 
   function discardExisting() {
     if (!confirm('Discard the saved trip in progress?')) return;
     clearRunState();
+    clearPendingManifest();
     setPassengers([]);
   }
 
   const summary = stopSummary(passengers, routeCode);
   const stopOptions = ROUTES[routeCode].stops;
+  const firstStop = stopOptions[0];
+  const boardingFirst = useMemo(
+    () => passengers.filter((p) => p.joinStop === firstStop),
+    [passengers, firstStop],
+  );
+  const boardedFirst = boardingFirst.filter(
+    (p) => p.status === 'boarded' || p.status === 'walkup',
+  ).length;
+  const ledger = useMemo(() => ledgerSnapshot(passengers, routeCode, 0), [passengers, routeCode]);
+
+  function setHeadCount(n: number) {
+    setPassengers((prev) => setBoardedCountAt(prev, firstStop, n));
+  }
 
   const flagged = useMemo(() => {
     const seatCounts = new Map<string, number>();
@@ -247,6 +289,20 @@ export default function ManifestUpload() {
         )}
       </div>
 
+      {passengers.length > 0 && (
+        <div className="sticky top-2 z-10">
+          <ManifestSummary
+            ledger={ledger}
+            headCount={{
+              label: `Head count at ${STOP_NAMES[firstStop]}`,
+              count: boardedFirst,
+              max: boardingFirst.length,
+              onSet: setHeadCount,
+            }}
+          />
+        </div>
+      )}
+
       <section className="rounded-2xl bg-slate-800 p-3">
         <h2 className="mb-2 text-base font-bold">Manifest photos ({images.length}/5)</h2>
         <div className="flex flex-wrap gap-2">
@@ -288,18 +344,7 @@ export default function ManifestUpload() {
       </section>
 
       {passengers.length > 0 && (
-        <section className="rounded-2xl bg-slate-800 p-4">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-base font-bold uppercase tracking-wide text-slate-400">
-              Manifest summary
-            </h2>
-            <span className="text-3xl font-black tabular-nums text-emerald-300">
-              {passengers.length}
-              <span className="ml-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                booked
-              </span>
-            </span>
-          </div>
+        <section className="rounded-2xl bg-slate-800 p-3">
           <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
             Pickups / dropoffs by stop
           </h3>
