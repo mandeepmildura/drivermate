@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../state/SessionProvider';
-import { loadRouteStops } from '../lib/routes';
+import { loadRoutePath, loadRouteStops } from '../lib/routes';
 import { recordBreadcrumb, recordShift, recordStopEvent } from '../lib/sync';
 import {
   bandClass,
@@ -94,7 +94,13 @@ export default function Run() {
   const audioSpokenForRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (shift) loadRouteStops(shift.route_id);
+    if (!shift) return;
+    void loadRouteStops(shift.route_id);
+    // Re-fetch path_geojson on every /run load. Picks up server-side updates
+    // and heals stale Dexie rows where the path was null at pick-time (e.g.
+    // shift resumed on a fresh device, or picked before V/Line paths were
+    // seeded). Without this, RouteMap falls back to a straight-line polyline.
+    void loadRoutePath(shift.route_id);
   }, [shift?.route_id]);
 
   useEffect(() => {
