@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getRouteWithStops, insertTurnWaypoints, type TurnDraft } from '../lib/adminRoutes';
+import { getRouteWithStops, deleteTurnsBetween, insertTurnWaypoints, type TurnDraft } from '../lib/adminRoutes';
 import { getSupabase } from '../lib/supabase';
 import type { RouteRow, RouteStopRow } from '../lib/db';
 
@@ -16,9 +16,10 @@ type LegState = {
   preview: DirectionsStep[] | null;
   error: string | null;
   saving: boolean;
+  deleting: boolean;
 };
 
-const blankLeg: LegState = { loading: false, preview: null, error: null, saving: false };
+const blankLeg: LegState = { loading: false, preview: null, error: null, saving: false, deleting: false };
 
 // Fetches turn-by-turn between two coords from the /api/google-directions
 // Pages Function. The user's Supabase session token authenticates them as
@@ -125,6 +126,20 @@ export default function AdminImportTurns() {
     }
   }
 
+  async function deleteLegTurns(legKey: string, from: RouteStopRow, to: RouteStopRow, count: number) {
+    if (!routeId) return;
+    if (!window.confirm(`Delete ${count} turn waypoint${count === 1 ? '' : 's'} between ${from.stop_name} and ${to.stop_name}?`)) return;
+    setLeg(legKey, { deleting: true, error: null });
+    try {
+      await deleteTurnsBetween(routeId, from.sequence, to.sequence);
+      const fresh = await getRouteWithStops(routeId);
+      setStops(fresh.stops);
+      setLeg(legKey, { deleting: false, error: null, preview: null });
+    } catch (err) {
+      setLeg(legKey, { deleting: false, error: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
   if (loadError) {
     return (
       <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-6">
@@ -196,15 +211,28 @@ export default function AdminImportTurns() {
                       : `${turnsBetween.length} turn waypoint${turnsBetween.length === 1 ? '' : 's'} already imported.`}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  disabled={state.loading || route.locked || !canFetch}
-                  onClick={() => void previewLeg(legKey, from, to)}
-                  className="shrink-0 rounded-xl bg-blue-500 px-4 py-2 text-sm font-bold text-white active:bg-blue-400 disabled:opacity-40"
-                  title={canFetch ? '' : 'Both stops need lat/lng set'}
-                >
-                  {state.loading ? 'Fetching…' : 'Preview turns'}
-                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  {turnsBetween.length > 0 && (
+                    <button
+                      type="button"
+                      disabled={state.deleting || route.locked}
+                      onClick={() => void deleteLegTurns(legKey, from, to, turnsBetween.length)}
+                      className="rounded-xl bg-red-500/20 px-3 py-2 text-xs font-bold text-red-200 active:bg-red-500/30 disabled:opacity-40"
+                      title="Delete imported turns on this leg"
+                    >
+                      {state.deleting ? 'Deleting…' : `Delete ${turnsBetween.length}`}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={state.loading || route.locked || !canFetch}
+                    onClick={() => void previewLeg(legKey, from, to)}
+                    className="rounded-xl bg-blue-500 px-4 py-2 text-sm font-bold text-white active:bg-blue-400 disabled:opacity-40"
+                    title={canFetch ? '' : 'Both stops need lat/lng set'}
+                  >
+                    {state.loading ? 'Fetching…' : 'Preview turns'}
+                  </button>
+                </div>
               </div>
 
               {state.error && (
