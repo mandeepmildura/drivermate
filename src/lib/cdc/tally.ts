@@ -69,7 +69,14 @@ export function expectedAlightingAt(passengers: Passenger[], stop: StopCode): Pa
   return passengers.filter(
     (p) =>
       p.leaveStop === stop &&
-      (p.status === 'boarded' || p.status === 'walkup' || p.status === 'alighted' || p.status === 'expected'),
+      (p.status === 'boarded' ||
+        p.status === 'walkup' ||
+        p.status === 'alighted' ||
+        p.status === 'expected' ||
+        // Keep no-shows visible at their would-be alighting stop so the
+        // driver can undo a misclick. Otherwise the row vanishes after the
+        // first tap and there's no way back without re-editing the manifest.
+        p.status === 'noshow'),
   );
 }
 

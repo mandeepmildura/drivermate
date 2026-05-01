@@ -18,7 +18,9 @@ import {
 } from '../../lib/cdc/tally';
 import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
+import { isSimEnabled } from '../../lib/simFlag';
 import { getSupabase } from '../../lib/supabase';
+import { useSession } from '../../state/SessionProvider';
 import { ManifestSummary } from './SummaryCard';
 
 type ImageItem = { id: string; file: File; previewUrl: string; base64: string; mediaType: string };
@@ -42,6 +44,7 @@ async function fileToBase64(file: File): Promise<{ base64: string; mediaType: st
 
 export default function ManifestUpload() {
   const navigate = useNavigate();
+  const { driver } = useSession();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('return');
   const routeQuery = searchParams.get('route');
@@ -175,6 +178,42 @@ export default function ManifestUpload() {
 
   function removePassenger(id: string) {
     setPassengers((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  // Loads a canned manifest so the OCR step can be skipped on the preview
+  // deploy where ANTHROPIC_API_KEY isn't set, and so admins can quickly
+  // sandbox the V/Line panel against a representative trip. Spread boarders
+  // and alighters across the route — without intermediate-stop boarders the
+  // panel has nothing to toggle except at the first stop.
+  function loadSampleManifest() {
+    const stops = ROUTES[routeCode].stops;
+    const last = stops.length - 1;
+    const mid = Math.floor(stops.length / 2);
+    const quarter = Math.floor(stops.length / 4);
+    const threeQuarter = Math.floor((stops.length * 3) / 4);
+    // Pick valid indices defensively in case the route ever shortens.
+    const pick = (n: number): number => Math.min(Math.max(0, n), last);
+    const sample: Passenger[] = [
+      // First-stop boarders going long-distance (head-count entry path).
+      { joinIdx: 0, leaveIdx: last, seat: '1A', name: 'Alice Long' },
+      { joinIdx: 0, leaveIdx: pick(mid), seat: '2B', name: 'Bob Mid' },
+      // Intermediate boarder, alights further on.
+      { joinIdx: pick(quarter), leaveIdx: pick(mid + 1), seat: '3C', name: 'Carol Mid' },
+      // Intermediate boarder, alights at the end.
+      { joinIdx: pick(mid), leaveIdx: last, seat: '4D', name: 'Dan Late' },
+      // Late boarder, short hop.
+      { joinIdx: pick(threeQuarter), leaveIdx: last, seat: '5E', name: 'Eve Tail' },
+    ].map(({ joinIdx, leaveIdx, seat, name }) => ({
+      id: newId(),
+      seat,
+      name,
+      joinStop: stops[joinIdx],
+      leaveStop: stops[leaveIdx],
+      ticketType: 'eTicket' as TicketType,
+      priority: false,
+      status: 'expected' as const,
+    }));
+    setPassengers(sample);
   }
 
   function addBlankPassenger() {
@@ -344,6 +383,15 @@ export default function ManifestUpload() {
         >
           {busy ? `Reading ${images.length} photo${images.length === 1 ? '' : 's'}…` : 'Read manifest'}
         </button>
+        {(driver?.is_admin || isSimEnabled()) && (
+          <button
+            type="button"
+            onClick={loadSampleManifest}
+            className="mt-2 w-full rounded-2xl bg-purple-600 px-4 py-2 text-sm font-bold text-white active:bg-purple-500"
+          >
+            🎮 Load sample manifest (admin / sim)
+          </button>
+        )}
         {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
       </section>
 

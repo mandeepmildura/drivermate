@@ -1,7 +1,25 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInDriver } from '../lib/auth';
+import { isSimEnabled } from '../lib/simFlag';
 import { useSession } from '../state/SessionProvider';
+
+// Pulls the Supabase project reference out of the anon key's JWT body.
+// Used purely by the ?sim=1 diagnostic on the login page to verify that
+// the URL and the anon key belong to the same project — Cloudflare Pages
+// can silently truncate a long-pasted env var, leaving you with a
+// correct-looking URL but a key that decodes to a different `ref`.
+function decodeJwtRef(jwt: string): string {
+  try {
+    const payload = jwt.split('.')[1];
+    if (!payload) return '(malformed)';
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const parsed = JSON.parse(json) as { ref?: string };
+    return parsed.ref ?? '(no ref)';
+  } catch {
+    return '(decode failed)';
+  }
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -38,6 +56,20 @@ export default function Login() {
         <div className="rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-200">
           Supabase isn&rsquo;t configured. Set <code>VITE_SUPABASE_URL</code> and{' '}
           <code>VITE_SUPABASE_ANON_KEY</code> in <code>.env.local</code>, then restart the dev server.
+        </div>
+      )}
+
+      {/* Diagnostic strip: appears whenever the sim flag is on. Lets us
+          verify on-device that the bundle is wired to the expected
+          Supabase project. The anon key is public (RLS-protected), so
+          surfacing its project ref isn't a credential leak. */}
+      {isSimEnabled() && (
+        <div className="rounded-2xl bg-slate-700/60 p-3 text-[11px] font-mono text-slate-300 break-all">
+          URL: {String(import.meta.env.VITE_SUPABASE_URL ?? '(not set)')}
+          <br />
+          Anon key length: {String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').length} chars
+          <br />
+          Anon key project ref: {decodeJwtRef(String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''))}
         </div>
       )}
 

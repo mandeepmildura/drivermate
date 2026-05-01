@@ -40,6 +40,10 @@ import {
 } from '../lib/runConfig';
 
 const APPROACHING_DISTANCE_M = 200;
+// Once the bus is this far from the just-dwelled-at stop, we consider it
+// "departed" and collapse the V/Line boarding panel. Wider than the 50 m
+// arrival geofence so the panel doesn't flicker if the driver inches forward.
+const DEPARTED_DISTANCE_M = 150;
 const GEO_PREF_KEY = 'drivermate.gpsAutoAdvance';
 
 // Off-route turn recovery thresholds. When the bus is closer to the next
@@ -102,6 +106,15 @@ export default function Run() {
   const arrivedSinceRef = useRef<number | null>(null);
   const autoAdvancedStopRef = useRef<string | null>(null);
   const audioSpokenForRef = useRef<string | null>(null);
+  // The stop the bus is currently halted at (dwell completed). Drives the
+  // V/Line boarding panel auto-expand. Lat/lng pinned at dwell-time so we can
+  // tell when the bus has actually departed even after currentIndex advances.
+  const [arrivedStop, setArrivedStop] = useState<{
+    id: string;
+    name: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
   const offRouteSinceRef = useRef<number | null>(null);
   const skipConfirmTimerRef = useRef<number | null>(null);
   const [pendingSkip, setPendingSkip] = useState(false);
@@ -223,9 +236,29 @@ export default function Run() {
     if (Date.now() - arrivedSinceRef.current! >= ARRIVAL_DWELL_MS_STOP) {
       autoAdvancedStopRef.current = currentStop.id;
       arrivedSinceRef.current = null;
+      // Pin this stop as "where the bus is now" — the V/Line panel uses this
+      // to auto-expand the boarding/alighting list. Skipped on drove-past
+      // (handled above) since the driver didn't actually halt there.
+      if (currentStop.lat != null && currentStop.lng != null) {
+        setArrivedStop({
+          id: currentStop.id,
+          name: currentStop.stop_name,
+          lat: currentStop.lat,
+          lng: currentStop.lng,
+        });
+      }
       logCurrentStop({ source: 'gps' });
     }
   }, [distanceToStop, passedCurrentStop, currentStop?.id, shift?.id, isTurn]);
+
+  // Clear the arrived-stop pin once the bus has driven away. Uses a wider
+  // exit threshold than the arrival geofence so the panel doesn't flicker if
+  // the driver creeps forward a few metres while loading.
+  useEffect(() => {
+    if (!arrivedStop || busLat == null || busLng == null) return;
+    const dist = haversineMetres(busLat, busLng, arrivedStop.lat, arrivedStop.lng);
+    if (dist > DEPARTED_DISTANCE_M) setArrivedStop(null);
+  }, [arrivedStop, busLat, busLng]);
 
   // Off-route turn recovery. hasPassedWaypoint snaps onto a 100 m chord
   // around the turn, so a detour one street over keeps the run stuck on
@@ -619,6 +652,7 @@ export default function Run() {
         <VlinePanel
           routeNumber={routeRow.route_number}
           currentStopName={currentStop?.stop_name ?? null}
+          arrivedStopName={arrivedStop?.name ?? null}
         />
       ) : (
         <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-slate-900 border-t border-slate-700">
@@ -650,7 +684,7 @@ export default function Run() {
         </div>
       )}
 
-      <RouteSimulator stops={stops} />
+      <RouteSimulator stops={stops} isAdmin={driver?.is_admin ?? false} />
     </main>
   );
 }
