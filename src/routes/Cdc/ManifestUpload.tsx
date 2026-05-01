@@ -290,8 +290,8 @@ export default function ManifestUpload() {
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-4">
       <header className="flex items-baseline justify-between">
         <h1 className="text-2xl font-black">CDC V/Line Manifest</h1>
-        <Link to="/routes" className="text-sm text-blue-400 underline-offset-4 hover:underline">
-          ← School routes
+        <Link to="/cdc/routes" className="text-sm text-blue-400 underline-offset-4 hover:underline">
+          ← V/Line routes
         </Link>
       </header>
 

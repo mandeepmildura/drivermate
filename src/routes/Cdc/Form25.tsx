@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSession } from '../../state/SessionProvider';
 import { ROUTES, STOP_NAMES } from '../../lib/cdc/stops';
 import { clearRunState, loadRunState, newId, saveRunState } from '../../lib/cdc/state';
 import { totalServiceBoardings } from '../../lib/cdc/tally';
@@ -50,6 +51,7 @@ function defaultForm(): Form25State {
 
 export default function Form25() {
   const navigate = useNavigate();
+  const { driver } = useSession();
   const [state, setState] = useState<RunState | null>(() => loadRunState());
   const [copied, setCopied] = useState(false);
 
@@ -107,7 +109,11 @@ export default function Form25() {
   function finishTrip() {
     if (!confirm('Finish trip and clear saved state?')) return;
     clearRunState();
-    navigate('/routes', { replace: true });
+    // V/Line drivers can drive school runs too — drop them on the service
+    // picker so they can choose what to do next instead of forcing them
+    // through the school route list.
+    const target = driver?.can_drive_vline ? '/services' : '/routes';
+    navigate(target, { replace: true });
   }
 
   const totalBoardings = totalServiceBoardings(state.passengers);

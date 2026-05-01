@@ -42,6 +42,11 @@ export default function RoutePicker() {
           {driver && <p className="text-slate-400">{driver.full_name}</p>}
         </div>
         <div className="flex items-center gap-3">
+          {driver?.can_drive_vline && (
+            <Link to="/services" className="text-sm text-blue-400 underline-offset-4 hover:underline">
+              ← Services
+            </Link>
+          )}
           {driver?.is_admin && (
             <Link to="/admin" className="text-sm text-blue-400 underline-offset-4 hover:underline">
               Admin

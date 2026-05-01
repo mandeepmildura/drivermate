@@ -46,6 +46,17 @@ const APPROACHING_DISTANCE_M = 200;
 const DEPARTED_DISTANCE_M = 150;
 const GEO_PREF_KEY = 'drivermate.gpsAutoAdvance';
 
+// Off-route turn recovery thresholds. When the bus is closer to the next
+// waypoint than to the current turn AND well past the geofence (so we don't
+// trip on turn coordinates that sit 60 m off the road), wait this long
+// before auto-skipping the missed turn. Stops are excluded — silently
+// dropping a pickup stop would mask a missed pickup.
+const OFF_ROUTE_DWELL_MS = 6_000;
+const OFF_ROUTE_MIN_DISTANCE_M = 150;
+const SKIP_CONFIRM_MS = 5_000;
+
+type LogSource = 'manual' | 'gps' | 'skip' | 'off_route';
+
 function useNow(intervalMs = 1000): Date {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -104,6 +115,9 @@ export default function Run() {
     lat: number;
     lng: number;
   } | null>(null);
+  const offRouteSinceRef = useRef<number | null>(null);
+  const skipConfirmTimerRef = useRef<number | null>(null);
+  const [pendingSkip, setPendingSkip] = useState(false);
 
   useEffect(() => {
     if (!shift) return;
@@ -156,7 +170,22 @@ export default function Run() {
   // Reset arrival dwell timer when current stop changes
   useEffect(() => {
     arrivedSinceRef.current = null;
+    offRouteSinceRef.current = null;
+    setPendingSkip(false);
+    if (skipConfirmTimerRef.current != null) {
+      window.clearTimeout(skipConfirmTimerRef.current);
+      skipConfirmTimerRef.current = null;
+    }
   }, [currentStop?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (skipConfirmTimerRef.current != null) {
+        window.clearTimeout(skipConfirmTimerRef.current);
+        skipConfirmTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Distance-based audio: speak instruction when ≤ AUDIO_TRIGGER_M to current stop/turn
   useEffect(() => {
@@ -231,6 +260,54 @@ export default function Run() {
     if (dist > DEPARTED_DISTANCE_M) setArrivedStop(null);
   }, [arrivedStop, busLat, busLng]);
 
+  // Off-route turn recovery. hasPassedWaypoint snaps onto a 100 m chord
+  // around the turn, so a detour one street over keeps the run stuck on
+  // the original instruction. Fallback signal: bus is closer to the next
+  // waypoint than to the current turn AND well past the geofence — the
+  // driver has clearly committed to a different street. Only auto-skips
+  // turns; a missed pickup stop must be handled manually so the count
+  // isn't silently zeroed.
+  const nextWaypoint = currentIndex + 1 < stops.length ? stops[currentIndex + 1] : null;
+  const nextWaypointLat = nextWaypoint?.lat ?? null;
+  const nextWaypointLng = nextWaypoint?.lng ?? null;
+  useEffect(() => {
+    if (!shift || !currentStop) {
+      offRouteSinceRef.current = null;
+      return;
+    }
+    if (!isTurn) {
+      offRouteSinceRef.current = null;
+      return;
+    }
+    if (autoAdvancedStopRef.current === currentStop.id) return;
+    if (busLat == null || busLng == null) return;
+    if (currentStop.lat == null || currentStop.lng == null) return;
+    if (nextWaypointLat == null || nextWaypointLng == null) {
+      offRouteSinceRef.current = null;
+      return;
+    }
+
+    const distCurrent = haversineMetres(busLat, busLng, currentStop.lat, currentStop.lng);
+    const distNext = haversineMetres(busLat, busLng, nextWaypointLat, nextWaypointLng);
+    const offRoute = distNext < distCurrent && distCurrent > OFF_ROUTE_MIN_DISTANCE_M;
+
+    if (!offRoute) {
+      offRouteSinceRef.current = null;
+      return;
+    }
+
+    if (offRouteSinceRef.current == null) {
+      offRouteSinceRef.current = Date.now();
+      return;
+    }
+
+    if (Date.now() - offRouteSinceRef.current >= OFF_ROUTE_DWELL_MS) {
+      autoAdvancedStopRef.current = currentStop.id;
+      offRouteSinceRef.current = null;
+      logCurrentStop({ source: 'off_route' });
+    }
+  }, [busLat, busLng, currentStop?.id, isTurn, currentStop?.lat, currentStop?.lng, nextWaypointLat, nextWaypointLng, shift?.id]);
+
   // GPS breadcrumb recorder — captures one fix every 5s while a shift is active.
   // Doubles as Vic Bus Safety Reg 31 retention data and as the source for
   // road-following polylines (see admin "Use trace as route line" tool).
@@ -284,15 +361,18 @@ export default function Run() {
     writeGpsPref(next);
   }
 
-  async function logCurrentStop(opts: { source: 'manual' | 'gps' } = { source: 'manual' }) {
+  async function logCurrentStop(opts: { source: LogSource } = { source: 'manual' }) {
     if (!shift || !currentStop) return;
     cancelSpeech();
     const isTurn = currentStop.kind === 'turn';
+    const isSkip = opts.source === 'skip' || opts.source === 'off_route';
     const noteParts: string[] = [];
     if (opts.source === 'gps') noteParts.push('auto-advanced via GPS');
+    if (opts.source === 'skip') noteParts.push('skipped manually');
+    if (opts.source === 'off_route') noteParts.push('auto-skipped off-route');
     if (isTurn) noteParts.push('turn waypoint');
     const note = noteParts.length > 0 ? noteParts.join('; ') : null;
-    const count = isTurn ? 0 : currentCount;
+    const count = isTurn || isSkip ? 0 : currentCount;
     await recordStopEvent({
       id: newId(),
       shift_id: shift.id,
@@ -306,13 +386,47 @@ export default function Run() {
     // Only clear the +/- pre-count after a real STOP. If the driver was
     // pre-counting boarders for an upcoming stop and a turn auto-advanced
     // mid-count, wiping currentCount would silently throw the count away.
-    if (!isTurn) setCurrentCount(0);
+    // Skips also leave currentCount alone so a mid-count skip of a missed
+    // turn doesn't drop pre-counted boarders for the next stop.
+    if (!isTurn && !isSkip) setCurrentCount(0);
     if (audioUnlocked && !muted) {
-      const utterance = isTurn
-        ? 'Turn complete.'
-        : `${count} logged at ${currentStop.stop_name}.`;
+      let utterance: string;
+      if (opts.source === 'off_route') {
+        utterance = 'Detoured. Advancing past turn.';
+      } else if (opts.source === 'skip') {
+        utterance = isTurn ? 'Turn skipped.' : `${currentStop.stop_name} skipped.`;
+      } else if (isTurn) {
+        utterance = 'Turn complete.';
+      } else {
+        utterance = `${count} logged at ${currentStop.stop_name}.`;
+      }
       speak(utterance, { dedupe: false, preempt: true });
     }
+  }
+
+  function handleSkip() {
+    if (!currentStop) return;
+    if (currentStop.kind === 'turn') {
+      void logCurrentStop({ source: 'skip' });
+      return;
+    }
+    if (!pendingSkip) {
+      setPendingSkip(true);
+      if (skipConfirmTimerRef.current != null) {
+        window.clearTimeout(skipConfirmTimerRef.current);
+      }
+      skipConfirmTimerRef.current = window.setTimeout(() => {
+        setPendingSkip(false);
+        skipConfirmTimerRef.current = null;
+      }, SKIP_CONFIRM_MS);
+      return;
+    }
+    if (skipConfirmTimerRef.current != null) {
+      window.clearTimeout(skipConfirmTimerRef.current);
+      skipConfirmTimerRef.current = null;
+    }
+    setPendingSkip(false);
+    void logCurrentStop({ source: 'skip' });
   }
 
   async function endRun() {
@@ -455,17 +569,34 @@ export default function Run() {
               </p>
             )}
           </div>
-          {(nextStopStatus === 'late' || nextStopStatus === 'delayed') && (
-            <span
-              className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${
-                nextStopStatus === 'late'
-                  ? 'bg-red-500/30 text-red-100'
-                  : 'bg-amber-500/30 text-amber-100'
+          <div className="shrink-0 flex flex-col items-end gap-1">
+            {(nextStopStatus === 'late' || nextStopStatus === 'delayed') && (
+              <span
+                className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${
+                  nextStopStatus === 'late'
+                    ? 'bg-red-500/30 text-red-100'
+                    : 'bg-amber-500/30 text-amber-100'
+                }`}
+              >
+                {nextStopStatus === 'late' ? 'Late' : 'Delayed'}
+              </span>
+            )}
+            {/* Always-visible manual override — recovers when GPS auto-advance
+                gets stuck (e.g. driver took a detour and is far from the
+                planned turn). Two-tap confirm on stops so a stray tap can't
+                silently zero a real pickup. */}
+            <button
+              type="button"
+              onClick={handleSkip}
+              className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest active:opacity-80 ${
+                pendingSkip
+                  ? 'bg-amber-500 text-slate-900'
+                  : 'bg-slate-900/40 text-slate-200'
               }`}
             >
-              {nextStopStatus === 'late' ? 'Late' : 'Delayed'}
-            </span>
-          )}
+              {pendingSkip ? 'Tap to confirm' : 'Skip'}
+            </button>
+          </div>
         </div>
       ) : (
         <div className="shrink-0 px-4 py-3 text-slate-400 text-sm">

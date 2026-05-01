@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { loadActiveBuses } from '../lib/routes';
 import { useSession } from '../state/SessionProvider';
 import { useShiftSetup } from '../state/ShiftSetupProvider';
 import { recordShift } from '../lib/sync';
-import type { BusRow, ShiftRow } from '../lib/db';
+import { db, type BusRow, type ShiftRow } from '../lib/db';
 
 function newId(): string {
   return crypto.randomUUID();
@@ -18,6 +19,17 @@ export default function BusConfirm() {
   const [override, setOverride] = useState(busCodeOverride ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Look up the chosen route so the header back-link points to the picker
+  // the driver actually came from (school /routes vs V/Line /cdc/routes).
+  const routeRow = useLiveQuery(
+    () => (routeId ? db.routes.get(routeId) : undefined),
+    [routeId],
+  );
+  const routesBackTarget =
+    routeRow?.service_type === 'vline' ? '/cdc/routes' : '/routes';
+  const routesBackLabel =
+    routeRow?.service_type === 'vline' ? '← V/Line routes' : '← Routes';
 
   useEffect(() => {
     if (!routeId) {
@@ -63,11 +75,19 @@ export default function BusConfirm() {
 
   return (
     <main className="mx-auto flex min-h-full max-w-md flex-col gap-4 p-6">
-      <header>
-        <h1 className="text-3xl font-black">Which bus today?</h1>
-        <p className="text-slate-400">
-          Pick the bus you&rsquo;re actually driving (not the route&rsquo;s usual bus).
-        </p>
+      <header className="flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-black">Which bus today?</h1>
+          <p className="text-slate-400">
+            Pick the bus you&rsquo;re actually driving (not the route&rsquo;s usual bus).
+          </p>
+        </div>
+        <Link
+          to={routesBackTarget}
+          className="shrink-0 text-sm text-blue-400 underline-offset-4 hover:underline"
+        >
+          {routesBackLabel}
+        </Link>
       </header>
 
       {buses === null ? (
