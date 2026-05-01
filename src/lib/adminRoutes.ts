@@ -130,3 +130,39 @@ export async function saveStops(
   if (rows.length > 0) await db.route_stops.bulkPut(rows);
   return rows;
 }
+
+// Inserts a batch of turn waypoints between two existing stops by calling
+// the insert_turn_waypoints RPC, which renumbers downstream sequences in a
+// transaction so the UNIQUE(route_id, sequence) constraint never trips.
+export interface TurnDraft {
+  instruction_text: string;
+  lat: number;
+  lng: number;
+}
+
+export async function insertTurnWaypoints(
+  routeId: string,
+  afterSequence: number,
+  turns: TurnDraft[],
+): Promise<RouteStopRow[]> {
+  if (turns.length === 0) return [];
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc('insert_turn_waypoints', {
+    p_route_id: routeId,
+    p_after_sequence: afterSequence,
+    p_turns: turns as unknown as Json,
+  });
+  if (error) throw error;
+  // Refetch the full route_stops list so Dexie reflects the renumbered
+  // downstream sequences too — the RPC only returns the inserted rows.
+  const refresh = await supabase
+    .from('route_stops')
+    .select('*')
+    .eq('route_id', routeId)
+    .order('sequence');
+  if (refresh.error) throw refresh.error;
+  await db.route_stops.where('route_id').equals(routeId).delete();
+  const rows = (refresh.data ?? []) as RouteStopRow[];
+  if (rows.length > 0) await db.route_stops.bulkPut(rows);
+  return (data ?? []) as RouteStopRow[];
+}

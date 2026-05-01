@@ -433,6 +433,15 @@ export default function AdminRouteEditor() {
         </span>
         <div className="flex gap-2 shrink-0">
           {!isNew && serverRoute && (
+            <Link
+              to={`/admin/${serverRoute.id}/import-turns`}
+              className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-bold uppercase tracking-widest text-purple-200 hover:bg-purple-500/30"
+              title="Import turn-by-turn from Google Maps"
+            >
+              Import turns
+            </Link>
+          )}
+          {!isNew && serverRoute && (
             <button
               type="button"
               onClick={toggleLocked}
