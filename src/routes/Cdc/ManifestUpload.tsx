@@ -181,24 +181,38 @@ export default function ManifestUpload() {
   }
 
   // Loads a canned manifest so the OCR step can be skipped on the preview
-  // deploy where ANTHROPIC_API_KEY isn't set. Five passengers, all boarding
-  // at the first stop, each alighting at a different downstream stop — just
-  // enough to exercise the V/Line panel's auto-expand behaviour.
+  // deploy where ANTHROPIC_API_KEY isn't set, and so admins can quickly
+  // sandbox the V/Line panel against a representative trip. Spread boarders
+  // and alighters across the route — without intermediate-stop boarders the
+  // panel has nothing to toggle except at the first stop.
   function loadSampleManifest() {
     const stops = ROUTES[routeCode].stops;
-    const sample: Passenger[] = [];
-    for (let i = 1; i <= 5 && i < stops.length; i++) {
-      sample.push({
-        id: newId(),
-        seat: `${i}A`,
-        name: `Test Passenger ${i}`,
-        joinStop: stops[0],
-        leaveStop: stops[i],
-        ticketType: 'eTicket',
-        priority: false,
-        status: 'expected',
-      });
-    }
+    const last = stops.length - 1;
+    const mid = Math.floor(stops.length / 2);
+    const quarter = Math.floor(stops.length / 4);
+    const threeQuarter = Math.floor((stops.length * 3) / 4);
+    // Pick valid indices defensively in case the route ever shortens.
+    const pick = (n: number): number => Math.min(Math.max(0, n), last);
+    const sample: Passenger[] = [
+      // First-stop boarders going long-distance (head-count entry path).
+      { joinIdx: 0, leaveIdx: last, seat: '1A', name: 'Alice Long' },
+      { joinIdx: 0, leaveIdx: pick(mid), seat: '2B', name: 'Bob Mid' },
+      // Intermediate boarder, alights further on.
+      { joinIdx: pick(quarter), leaveIdx: pick(mid + 1), seat: '3C', name: 'Carol Mid' },
+      // Intermediate boarder, alights at the end.
+      { joinIdx: pick(mid), leaveIdx: last, seat: '4D', name: 'Dan Late' },
+      // Late boarder, short hop.
+      { joinIdx: pick(threeQuarter), leaveIdx: last, seat: '5E', name: 'Eve Tail' },
+    ].map(({ joinIdx, leaveIdx, seat, name }) => ({
+      id: newId(),
+      seat,
+      name,
+      joinStop: stops[joinIdx],
+      leaveStop: stops[leaveIdx],
+      ticketType: 'eTicket' as TicketType,
+      priority: false,
+      status: 'expected' as const,
+    }));
     setPassengers(sample);
   }
 
