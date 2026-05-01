@@ -8,6 +8,7 @@ import BusConfirm from './routes/BusConfirm';
 import Run from './routes/Run';
 import EndOfRun from './routes/EndOfRun';
 import Admin from './routes/Admin';
+import AdminImportTurns from './routes/AdminImportTurns';
 import AdminRouteEditor from './routes/AdminRouteEditor';
 import AdminDrivers from './routes/AdminDrivers';
 import AdminReplay from './routes/AdminReplay';
@@ -119,6 +120,16 @@ export default function App() {
               <RequireDriver>
                 <RequireAdmin>
                   <AdminRouteEditor />
+                </RequireAdmin>
+              </RequireDriver>
+            }
+          />
+          <Route
+            path="/admin/:routeId/import-turns"
+            element={
+              <RequireDriver>
+                <RequireAdmin>
+                  <AdminImportTurns />
                 </RequireAdmin>
               </RequireDriver>
             }
