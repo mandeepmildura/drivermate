@@ -18,6 +18,7 @@ import {
 } from '../../lib/cdc/tally';
 import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
+import { isSimEnabled } from '../../lib/simFlag';
 import { getSupabase } from '../../lib/supabase';
 import { ManifestSummary } from './SummaryCard';
 
@@ -175,6 +176,28 @@ export default function ManifestUpload() {
 
   function removePassenger(id: string) {
     setPassengers((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  // Loads a canned manifest so the OCR step can be skipped on the preview
+  // deploy where ANTHROPIC_API_KEY isn't set. Five passengers, all boarding
+  // at the first stop, each alighting at a different downstream stop — just
+  // enough to exercise the V/Line panel's auto-expand behaviour.
+  function loadSampleManifest() {
+    const stops = ROUTES[routeCode].stops;
+    const sample: Passenger[] = [];
+    for (let i = 1; i <= 5 && i < stops.length; i++) {
+      sample.push({
+        id: newId(),
+        seat: `${i}A`,
+        name: `Test Passenger ${i}`,
+        joinStop: stops[0],
+        leaveStop: stops[i],
+        ticketType: 'eTicket',
+        priority: false,
+        status: 'expected',
+      });
+    }
+    setPassengers(sample);
   }
 
   function addBlankPassenger() {
@@ -344,6 +367,15 @@ export default function ManifestUpload() {
         >
           {busy ? `Reading ${images.length} photo${images.length === 1 ? '' : 's'}…` : 'Read manifest'}
         </button>
+        {isSimEnabled() && (
+          <button
+            type="button"
+            onClick={loadSampleManifest}
+            className="mt-2 w-full rounded-2xl bg-purple-600 px-4 py-2 text-sm font-bold text-white active:bg-purple-500"
+          >
+            🎮 Load sample manifest (skip OCR)
+          </button>
+        )}
         {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
       </section>
 

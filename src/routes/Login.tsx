@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInDriver } from '../lib/auth';
+import { isSimEnabled } from '../lib/simFlag';
 import { useSession } from '../state/SessionProvider';
 
 // Pulls the Supabase project reference out of the anon key's JWT body.
@@ -58,20 +59,19 @@ export default function Login() {
         </div>
       )}
 
-      {/* Diagnostic strip: appears only with ?sim=1 in the URL. Lets us
+      {/* Diagnostic strip: appears whenever the sim flag is on. Lets us
           verify on-device that the bundle is wired to the expected
           Supabase project. The anon key is public (RLS-protected), so
           surfacing its project ref isn't a credential leak. */}
-      {typeof window !== 'undefined' &&
-        new URLSearchParams(window.location.search).get('sim') === '1' && (
-          <div className="rounded-2xl bg-slate-700/60 p-3 text-[11px] font-mono text-slate-300 break-all">
-            URL: {String(import.meta.env.VITE_SUPABASE_URL ?? '(not set)')}
-            <br />
-            Anon key length: {String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').length} chars
-            <br />
-            Anon key project ref: {decodeJwtRef(String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''))}
-          </div>
-        )}
+      {isSimEnabled() && (
+        <div className="rounded-2xl bg-slate-700/60 p-3 text-[11px] font-mono text-slate-300 break-all">
+          URL: {String(import.meta.env.VITE_SUPABASE_URL ?? '(not set)')}
+          <br />
+          Anon key length: {String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').length} chars
+          <br />
+          Anon key project ref: {decodeJwtRef(String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''))}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-3xl bg-slate-800 p-6 shadow-xl">
         <label className="flex flex-col gap-2">
