@@ -12,7 +12,10 @@ interface Props {
 }
 
 const STOP_DWELL_MS = 9_500;
-const TURN_DWELL_MS = 1_500;
+// Long enough at 1× speed to actually read a turn instruction ("Sturt Hwy
+// east, then Murray Valley Hwy") before it cycles to the next waypoint.
+// Higher speeds scale this down (capped at 300 ms by the play loop).
+const TURN_DWELL_MS = 4_500;
 
 export function RouteSimulator({ stops, isAdmin = false }: Props) {
   // Dev always on. In production: render for admins OR when the sim URL
