@@ -334,21 +334,42 @@ export default function VlinePanel({
                       <SeatPill seat={p.seat} />
                       <span className="truncate text-sm font-bold text-slate-100">{p.name}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPassenger(p.id, {
-                          status: p.status === 'alighted' ? 'boarded' : 'alighted',
-                        })
-                      }
-                      className={`min-h-[2.75rem] shrink-0 rounded-lg px-4 text-sm font-bold ${
-                        p.status === 'alighted'
-                          ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
-                          : 'bg-slate-700 text-slate-100 active:bg-slate-600'
-                      }`}
-                    >
-                      {p.status === 'alighted' ? '✓ Off' : 'Off'}
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {/* Wasn't on bus = retroactive no-show. The first-stop
+                          head-count entry doesn't track which specific
+                          passengers boarded, so a missing alighter at this
+                          stop is the first place we can resolve the gap. */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPassenger(p.id, {
+                            status: p.status === 'noshow' ? 'boarded' : 'noshow',
+                          })
+                        }
+                        className={`min-h-[2.75rem] rounded-lg px-3 text-xs font-bold ${
+                          p.status === 'noshow'
+                            ? 'bg-slate-500 text-slate-900 active:bg-slate-400'
+                            : 'bg-slate-700 text-slate-300 active:bg-slate-600'
+                        }`}
+                      >
+                        {p.status === 'noshow' ? '✓ No-show' : "Wasn't on"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPassenger(p.id, {
+                            status: p.status === 'alighted' ? 'boarded' : 'alighted',
+                          })
+                        }
+                        className={`min-h-[2.75rem] rounded-lg px-4 text-sm font-bold ${
+                          p.status === 'alighted'
+                            ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
+                            : 'bg-slate-700 text-slate-100 active:bg-slate-600'
+                        }`}
+                      >
+                        {p.status === 'alighted' ? '✓ Off' : 'Off'}
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
