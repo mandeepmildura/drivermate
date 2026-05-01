@@ -17,13 +17,23 @@ import { CountBadge, SeatPill } from './ui';
 type Props = {
   routeNumber: string;
   currentStopName: string | null | undefined;
+  // Name of the stop the bus is currently halted at (8 s GPS dwell completed
+  // within 50 m). When set, the panel auto-expands and filters its
+  // boarding/alighting lists to this stop instead of `currentStopName` —
+  // because the auto-advance has already moved currentStopName to the next
+  // stop by the time the driver wants to mark passengers.
+  arrivedStopName?: string | null;
 };
 
 function inferRouteCode(routeNumber: string): RouteCode {
   return routeNumber.toUpperCase().includes('C011') ? 'C011' : 'C012';
 }
 
-export default function VlinePanel({ routeNumber, currentStopName }: Props) {
+export default function VlinePanel({
+  routeNumber,
+  currentStopName,
+  arrivedStopName,
+}: Props) {
   const navigate = useNavigate();
   const [state, setState] = useState<RunState | null>(() => loadRunState());
   const [expanded, setExpanded] = useState(false);
@@ -35,7 +45,17 @@ export default function VlinePanel({ routeNumber, currentStopName }: Props) {
   }, [state]);
 
   const expectedRouteCode = useMemo(() => inferRouteCode(routeNumber), [routeNumber]);
-  const currentStop = useMemo(() => stopCodeFromName(currentStopName), [currentStopName]);
+  // Prefer the dwelled-at stop when present so passenger ops apply to where
+  // the bus actually is, not the next waypoint.
+  const operativeStopName = arrivedStopName ?? currentStopName;
+  const currentStop = useMemo(() => stopCodeFromName(operativeStopName), [operativeStopName]);
+
+  // Auto-expand on arrival, auto-collapse on departure. Driver can still
+  // toggle manually while halted.
+  useEffect(() => {
+    if (arrivedStopName) setExpanded(true);
+    else setExpanded(false);
+  }, [arrivedStopName]);
   const stops = ROUTES[expectedRouteCode].stops;
   const [walkDest, setWalkDest] = useState<StopCode>(stops[stops.length - 1]);
 
