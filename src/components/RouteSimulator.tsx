@@ -10,7 +10,14 @@ const STOP_DWELL_MS = 9_500;
 const TURN_DWELL_MS = 1_500;
 
 export function RouteSimulator({ stops }: Props) {
-  if (!import.meta.env.DEV) return null;
+  // Dev builds always show the simulator. Production builds only render it
+  // when the URL has `?sim=1` — used for testing on a real device when a
+  // laptop on the same Wi-Fi isn't available. Real drivers never pass the
+  // flag, so the SIM button stays hidden for them.
+  const simFlag =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('sim') === '1';
+  if (!import.meta.env.DEV && !simFlag) return null;
 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(false);
