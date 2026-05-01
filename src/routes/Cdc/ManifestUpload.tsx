@@ -20,6 +20,7 @@ import { ROUTE_THEMES } from '../../lib/cdc/theme';
 import type { Passenger, RouteCode, StopCode, TicketType } from '../../lib/cdc/types';
 import { isSimEnabled } from '../../lib/simFlag';
 import { getSupabase } from '../../lib/supabase';
+import { useSession } from '../../state/SessionProvider';
 import { ManifestSummary } from './SummaryCard';
 
 type ImageItem = { id: string; file: File; previewUrl: string; base64: string; mediaType: string };
@@ -43,6 +44,7 @@ async function fileToBase64(file: File): Promise<{ base64: string; mediaType: st
 
 export default function ManifestUpload() {
   const navigate = useNavigate();
+  const { driver } = useSession();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('return');
   const routeQuery = searchParams.get('route');
@@ -367,13 +369,13 @@ export default function ManifestUpload() {
         >
           {busy ? `Reading ${images.length} photo${images.length === 1 ? '' : 's'}…` : 'Read manifest'}
         </button>
-        {isSimEnabled() && (
+        {(driver?.is_admin || isSimEnabled()) && (
           <button
             type="button"
             onClick={loadSampleManifest}
             className="mt-2 w-full rounded-2xl bg-purple-600 px-4 py-2 text-sm font-bold text-white active:bg-purple-500"
           >
-            🎮 Load sample manifest (skip OCR)
+            🎮 Load sample manifest (admin / sim)
           </button>
         )}
         {error && <p className="mt-2 text-sm text-red-300">{error}</p>}

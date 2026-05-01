@@ -5,16 +5,19 @@ import type { RouteStopRow } from '../lib/db';
 
 interface Props {
   stops: RouteStopRow[];
+  // True when the signed-in driver row has is_admin=true. Production builds
+  // only render the simulator for admins or when the sim URL flag is set —
+  // real drivers see nothing.
+  isAdmin?: boolean;
 }
 
 const STOP_DWELL_MS = 9_500;
 const TURN_DWELL_MS = 1_500;
 
-export function RouteSimulator({ stops }: Props) {
-  // Dev builds always show the simulator. Production builds only render it
-  // when the sim flag is set (?sim=1 in URL or pinned in sessionStorage).
-  // Real drivers never pass the flag, so the SIM button stays hidden.
-  if (!import.meta.env.DEV && !isSimEnabled()) return null;
+export function RouteSimulator({ stops, isAdmin = false }: Props) {
+  // Dev always on. In production: render for admins OR when the sim URL
+  // flag is set (?sim=1, pinned in sessionStorage). Hidden from regular drivers.
+  if (!import.meta.env.DEV && !isAdmin && !isSimEnabled()) return null;
 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(false);

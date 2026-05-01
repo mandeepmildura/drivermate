@@ -553,7 +553,7 @@ export default function Run() {
         </div>
       )}
 
-      <RouteSimulator stops={stops} />
+      <RouteSimulator stops={stops} isAdmin={driver?.is_admin ?? false} />
     </main>
   );
 }
