@@ -94,7 +94,9 @@ export default function EndOfRun() {
         type="button"
         onClick={() => {
           reset();
-          navigate('/routes');
+          // V/Line-capable drivers go via the service picker so they can
+          // switch between school and V/Line for their next shift.
+          navigate(driver?.can_drive_vline ? '/services' : '/routes');
         }}
         className="btn-primary"
       >
