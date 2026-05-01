@@ -166,3 +166,34 @@ export async function insertTurnWaypoints(
   if (rows.length > 0) await db.route_stops.bulkPut(rows);
   return (data ?? []) as RouteStopRow[];
 }
+
+// Removes every turn waypoint sitting between two scheduled stops. Sequences
+// of the surrounding stops aren't renumbered — the schema only requires
+// uniqueness, not contiguity, and re-importing will pick whatever gap is
+// left. Subject to the existing route_stops_admin_write RLS, so this only
+// works on unlocked routes for admin users.
+export async function deleteTurnsBetween(
+  routeId: string,
+  fromSequence: number,
+  toSequence: number,
+): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from('route_stops')
+    .delete()
+    .eq('route_id', routeId)
+    .eq('kind', 'turn')
+    .gt('sequence', fromSequence)
+    .lt('sequence', toSequence);
+  if (error) throw error;
+  // Refetch so Dexie matches the server.
+  const refresh = await supabase
+    .from('route_stops')
+    .select('*')
+    .eq('route_id', routeId)
+    .order('sequence');
+  if (refresh.error) throw refresh.error;
+  await db.route_stops.where('route_id').equals(routeId).delete();
+  const rows = (refresh.data ?? []) as RouteStopRow[];
+  if (rows.length > 0) await db.route_stops.bulkPut(rows);
+}
