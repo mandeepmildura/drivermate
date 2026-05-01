@@ -3,6 +3,23 @@ import { Link, useNavigate } from 'react-router-dom';
 import { signInDriver } from '../lib/auth';
 import { useSession } from '../state/SessionProvider';
 
+// Pulls the Supabase project reference out of the anon key's JWT body.
+// Used purely by the ?sim=1 diagnostic on the login page to verify that
+// the URL and the anon key belong to the same project — Cloudflare Pages
+// can silently truncate a long-pasted env var, leaving you with a
+// correct-looking URL but a key that decodes to a different `ref`.
+function decodeJwtRef(jwt: string): string {
+  try {
+    const payload = jwt.split('.')[1];
+    if (!payload) return '(malformed)';
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const parsed = JSON.parse(json) as { ref?: string };
+    return parsed.ref ?? '(no ref)';
+  } catch {
+    return '(decode failed)';
+  }
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const { session, driver, configured, profileError } = useSession();
@@ -48,9 +65,11 @@ export default function Login() {
       {typeof window !== 'undefined' &&
         new URLSearchParams(window.location.search).get('sim') === '1' && (
           <div className="rounded-2xl bg-slate-700/60 p-3 text-[11px] font-mono text-slate-300 break-all">
-            Supabase URL: {String(import.meta.env.VITE_SUPABASE_URL ?? '(not set)')}
+            URL: {String(import.meta.env.VITE_SUPABASE_URL ?? '(not set)')}
             <br />
-            Anon key prefix: {String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').slice(0, 20)}…
+            Anon key length: {String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').length} chars
+            <br />
+            Anon key project ref: {decodeJwtRef(String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''))}
           </div>
         )}
 
