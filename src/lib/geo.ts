@@ -52,7 +52,21 @@ export function useGeolocation(enabled: boolean): GeoStatus {
   const [status, setStatus] = useState<GeoStatus>({ kind: 'idle' });
 
   useEffect(() => {
+    // Even with GPS toggled off the user might be running the simulator
+    // (admin testing, ?sim=1 sandbox), and the simulator hard-overrides
+    // real GPS by definition. Honour any active simulated position before
+    // bailing out, so the "GPS off" toggle only mutes real-device tracking.
     if (!enabled) {
+      const sim = getSimulatedPosition();
+      if (sim) {
+        setStatus(simulatedToStatus(sim));
+        const unsub = subscribeSimulator(() => {
+          const next = getSimulatedPosition();
+          if (next) setStatus(simulatedToStatus(next));
+          else setStatus({ kind: 'idle' });
+        });
+        return unsub;
+      }
       setStatus({ kind: 'idle' });
       return;
     }

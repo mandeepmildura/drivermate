@@ -4,11 +4,15 @@ import { ALL_STOP_CODES, ROUTES, STOP_NAMES } from '../../lib/cdc/stops';
 import {
   clearPendingManifest,
   clearRunState,
+  deleteSavedManifest,
+  listSavedManifests,
   loadPendingManifest,
   loadRunState,
   newId,
   savePendingManifest,
+  saveNamedManifest,
   saveRunState,
+  type SavedManifest,
 } from '../../lib/cdc/state';
 import {
   findSeatConflicts,
@@ -65,6 +69,9 @@ export default function ManifestUpload() {
   );
   const [showAllRows, setShowAllRows] = useState(false);
   const ocrAtRef = useMemo(() => ({ value: pending?.ocrAt ?? null }), [pending]);
+  // Local list of saved snapshots for admin "replay this manifest" library.
+  // Refreshes after every save/delete so the dropdown stays in sync.
+  const [saved, setSaved] = useState<SavedManifest[]>(() => listSavedManifests());
 
   useEffect(() => {
     localStorage.setItem(ROUTE_KEY, routeCode);
@@ -178,6 +185,26 @@ export default function ManifestUpload() {
 
   function removePassenger(id: string) {
     setPassengers((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function saveCurrentManifest() {
+    if (passengers.length === 0) return;
+    const defaultName = `${routeCode} ${new Date().toLocaleString()}`;
+    const name = window.prompt('Name this snapshot:', defaultName);
+    if (name == null) return; // cancelled
+    const entry = saveNamedManifest(name, routeCode, passengers);
+    setSaved([entry, ...saved.filter((s) => s.id !== entry.id)].slice(0, 20));
+  }
+
+  function loadSavedManifest(snapshot: SavedManifest) {
+    setRouteCode(snapshot.routeCode);
+    setPassengers(snapshot.passengers.map((p) => ({ ...p, id: newId(), status: 'expected' })));
+  }
+
+  function removeSavedManifest(id: string) {
+    if (!window.confirm('Delete this snapshot?')) return;
+    deleteSavedManifest(id);
+    setSaved((prev) => prev.filter((s) => s.id !== id));
   }
 
   // Loads a canned manifest so the OCR step can be skipped on the preview
@@ -394,6 +421,60 @@ export default function ManifestUpload() {
         )}
         {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
       </section>
+
+      {(driver?.is_admin || isSimEnabled()) && (
+        <section className="rounded-2xl bg-slate-800 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="text-base font-bold">🗂 Saved snapshots</h2>
+            <button
+              type="button"
+              onClick={saveCurrentManifest}
+              disabled={passengers.length === 0}
+              className="rounded-xl bg-purple-600 px-3 py-1 text-xs font-bold text-white active:bg-purple-500 disabled:opacity-40"
+            >
+              + Save current
+            </button>
+          </div>
+          {saved.length === 0 ? (
+            <p className="text-xs text-slate-500">
+              Save an OCR'd manifest here to replay it through the simulator later — same passengers, no re-uploading photos.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {saved.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex items-center justify-between gap-2 rounded-xl bg-slate-900/40 p-2.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-slate-100">{s.name}</p>
+                    <p className="truncate text-[11px] text-slate-400">
+                      {s.routeCode} · {s.passengers.length} pax · {new Date(s.savedAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => loadSavedManifest(s)}
+                      className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-slate-900 active:bg-emerald-400"
+                    >
+                      Load
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeSavedManifest(s.id)}
+                      aria-label={`Delete ${s.name}`}
+                      className="rounded-lg bg-slate-700 px-2 py-1.5 text-xs font-bold text-slate-300 active:bg-slate-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {passengers.length > 0 && (
         <section className="rounded-2xl bg-slate-800 p-3">
