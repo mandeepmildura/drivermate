@@ -32,6 +32,13 @@ export function bandClass(status: OnTimeStatus): string {
   }
 }
 
+export function isDuplicateStopLog(
+  currentStopId: string,
+  lastLoggedStopId: string | null,
+): boolean {
+  return currentStopId === lastLoggedStopId;
+}
+
 export function formatElapsed(startedAt: string, now: Date = new Date()): string {
   const ms = now.getTime() - new Date(startedAt).getTime();
   const totalSec = Math.max(0, Math.floor(ms / 1000));

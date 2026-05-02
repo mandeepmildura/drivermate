@@ -164,6 +164,43 @@ describe('sync.flushPendingMutations', () => {
     expect(remaining[0].last_error).toBe('Network unreachable');
   });
 
+  it('recordStopEvent same id → 1 row; different ids → 2 rows (dedupe invariant)', async () => {
+    // Documents why the Run.tsx isDuplicateStopLog guard matters: the data
+    // layer dedupes by primary key, NOT by route_stop_id. Two manual taps
+    // generated two fresh UUIDs and produced two rows — that's the bug the
+    // upper-layer guard prevents.
+    await recordStopEvent({
+      id: 'evt-dupe-1',
+      shift_id: 'shift-x',
+      route_stop_id: 'rs-1',
+      arrived_at: '2026-04-25T07:50:00Z',
+      pickup_count: 3,
+      note: null,
+      synced_at: null,
+    });
+    await recordStopEvent({
+      id: 'evt-dupe-1',
+      shift_id: 'shift-x',
+      route_stop_id: 'rs-1',
+      arrived_at: '2026-04-25T07:50:00Z',
+      pickup_count: 3,
+      note: null,
+      synced_at: null,
+    });
+    expect(await db.stop_events.count()).toBe(1);
+
+    await recordStopEvent({
+      id: 'evt-dupe-2',
+      shift_id: 'shift-x',
+      route_stop_id: 'rs-1',
+      arrived_at: '2026-04-25T07:50:01Z',
+      pickup_count: 3,
+      note: null,
+      synced_at: null,
+    });
+    expect(await db.stop_events.count()).toBe(2);
+  });
+
   it('survives the unindexed-attempts query (the SchemaError bug)', async () => {
     // Queue 6 mutations and mark some as having high attempts. The bug was
     // db.pending.where('attempts').below(5) throwing because attempts isn't

@@ -6,6 +6,7 @@ import { recordBreadcrumb, recordShift, recordStopEvent } from '../lib/sync';
 import {
   bandClass,
   formatElapsed,
+  isDuplicateStopLog,
   statusForScheduled,
   useActiveShift,
   useRunSnapshot,
@@ -377,6 +378,8 @@ export default function Run() {
 
   async function logCurrentStop(opts: { source: LogSource } = { source: 'manual' }) {
     if (!shift || !currentStop) return;
+    if (isDuplicateStopLog(currentStop.id, autoAdvancedStopRef.current)) return;
+    autoAdvancedStopRef.current = currentStop.id;
     cancelSpeech();
     const isTurn = currentStop.kind === 'turn';
     const isSkip = opts.source === 'skip' || opts.source === 'off_route';
