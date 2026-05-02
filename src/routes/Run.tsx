@@ -26,6 +26,7 @@ import { db } from '../lib/db';
 import { haversineMetres, useGeolocation } from '../lib/geo';
 import {
   directionFromInstruction,
+  enrichBareTurnText,
   hasPassedWaypoint,
 } from '../lib/turfUtils';
 import RouteMap from '../components/RouteMap';
@@ -162,6 +163,19 @@ export default function Run() {
   // Find next scheduled stop (kind='stop') at or after currentIndex
   const nextScheduledStop = stops.slice(currentIndex).find((s) => s.kind === 'stop') ?? null;
 
+  // For bare turn instructions ("Turn left", "Slight right", …) borrow the
+  // next stop name as a landmark so a driver who's never run the route has
+  // something to aim at. When the instruction already names a road, the
+  // helper returns it unchanged.
+  const followingStopName =
+    currentStop?.kind === 'turn' && nextScheduledStop && nextScheduledStop.id !== currentStop.id
+      ? nextScheduledStop.stop_name
+      : null;
+  const displayInstruction = enrichBareTurnText(
+    currentStop?.instruction_text ?? null,
+    followingStopName,
+  );
+
   // Next stop scheduled-time status
   const nextStopStatus: OnTimeStatus = nextScheduledStop
     ? statusForScheduled(nextScheduledStop.scheduled_time, now)
@@ -190,7 +204,7 @@ export default function Run() {
   // Distance-based audio: speak instruction when ≤ AUDIO_TRIGGER_M to current stop/turn
   useEffect(() => {
     if (!currentStop || !audioUnlocked || muted) return;
-    const text = currentStop.instruction_audio_cue || currentStop.instruction_text;
+    const text = currentStop.instruction_audio_cue || displayInstruction || currentStop.instruction_text;
     if (!text) return;
     const key = `${currentStop.id}-audio`;
     if (audioSpokenForRef.current === key) return;
@@ -490,7 +504,9 @@ export default function Run() {
     }
   }
 
-  // Direction arrow for turn banner
+  // Direction arrow for turn banner — derive from the raw instruction
+  // (the enriched form may have a stop name that contains "right"/"left"
+  // and would mislead the arrow detector).
   const turnArrow = directionFromInstruction(currentStop?.instruction_text ?? null);
 
   return (
@@ -561,7 +577,7 @@ export default function Run() {
           )}
           <div className="min-w-0 flex-1">
             <p className="text-xl font-bold leading-tight truncate">
-              {currentStop.instruction_text || currentStop.stop_name}
+              {displayInstruction || currentStop.stop_name}
             </p>
             {distanceDisplay != null && (
               <p className="text-[11px] font-bold uppercase tracking-widest opacity-70">

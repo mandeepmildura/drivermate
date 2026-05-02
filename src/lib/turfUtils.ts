@@ -64,3 +64,22 @@ export function directionFromInstruction(text: string | null): '←' | '→' | '
   if (lower.includes('right')) return '→';
   return '↑';
 }
+
+// "Bare" turn instructions — e.g. "Turn left", "Slight right" — give a new
+// driver no road or landmark to anchor on. When the next scheduled stop is
+// known, append " — toward <stop name>" so the spoken cue and banner read as
+// "Turn left — toward Swan Hill Station". Returns the input unchanged when
+// the instruction already contains a road reference, or when there's no next
+// stop to point at.
+const BARE_TURN_RE =
+  /^(turn (left|right|around)|slight (left|right)|sharp (left|right)|make a u-?turn|head (north|south|east|west|north[\s-]?east|north[\s-]?west|south[\s-]?east|south[\s-]?west))\.?$/i;
+
+export function enrichBareTurnText(
+  instruction: string | null | undefined,
+  nextStopName: string | null | undefined,
+): string | null {
+  if (!instruction) return instruction ?? null;
+  if (!nextStopName) return instruction;
+  if (!BARE_TURN_RE.test(instruction.trim())) return instruction;
+  return `${instruction.trim()} — toward ${nextStopName}`;
+}

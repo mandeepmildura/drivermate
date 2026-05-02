@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_logs",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__list_tables",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__list_projects",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__list_migrations",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__get_logs",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__get_edge_function",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__get_advisors",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__get_project",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__get_project_url",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__get_publishable_keys",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__search_docs",
+      "mcp__claude_ai_Supabase__get_logs"
+    ]
+  }
+}
