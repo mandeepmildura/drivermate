@@ -230,7 +230,6 @@ export default function Run() {
     if (autoAdvancedStopRef.current === currentStop.id) return;
 
     if (passedCurrentStop) {
-      autoAdvancedStopRef.current = currentStop.id;
       arrivedSinceRef.current = null;
       logCurrentStop({ source: 'gps' });
       return;
@@ -250,7 +249,6 @@ export default function Run() {
     }
 
     if (Date.now() - arrivedSinceRef.current! >= ARRIVAL_DWELL_MS_STOP) {
-      autoAdvancedStopRef.current = currentStop.id;
       arrivedSinceRef.current = null;
       // Pin this stop as "where the bus is now" — the V/Line panel uses this
       // to auto-expand the boarding/alighting list. Skipped on drove-past
@@ -318,7 +316,6 @@ export default function Run() {
     }
 
     if (Date.now() - offRouteSinceRef.current >= OFF_ROUTE_DWELL_MS) {
-      autoAdvancedStopRef.current = currentStop.id;
       offRouteSinceRef.current = null;
       logCurrentStop({ source: 'off_route' });
     }

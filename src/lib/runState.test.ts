@@ -13,6 +13,29 @@ describe('isDuplicateStopLog', () => {
   it('returns false when nothing has been logged yet', () => {
     expect(isDuplicateStopLog('stop-a', null)).toBe(false);
   });
+
+  it('distinguishes first vs second call for the same stop after the in-function set', () => {
+    // Anchors the timing invariant Run.tsx relies on: logCurrentStop sets
+    // autoAdvancedStopRef synchronously before any await. The first call
+    // for a stop sees the ref unset (returns false → log proceeds); a
+    // subsequent re-entry for the same stop sees the ref now matching
+    // (returns true → bail). The GPS branches MUST NOT pre-set the ref
+    // themselves — doing so makes the in-function guard fire on the
+    // first call and silently drop the log.
+    let lastLogged: string | null = null;
+
+    // First call for stop-a — ref still null.
+    expect(isDuplicateStopLog('stop-a', lastLogged)).toBe(false);
+    // logCurrentStop's synchronous set happens here.
+    lastLogged = 'stop-a';
+
+    // Second call for the same stop — ref now matches, must bail.
+    expect(isDuplicateStopLog('stop-a', lastLogged)).toBe(true);
+
+    // Run advances to next stop — currentStop.id changes; the stale ref
+    // value no longer matches, so the new stop logs cleanly.
+    expect(isDuplicateStopLog('stop-b', lastLogged)).toBe(false);
+  });
 });
 
 describe('coerceFiniteOrNull', () => {
