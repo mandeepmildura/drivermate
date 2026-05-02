@@ -5,6 +5,7 @@ import { loadRoutePath, loadRouteStops } from '../lib/routes';
 import { recordBreadcrumb, recordShift, recordStopEvent } from '../lib/sync';
 import {
   bandClass,
+  coerceFiniteOrNull,
   formatElapsed,
   isDuplicateStopLog,
   statusForScheduled,
@@ -334,15 +335,20 @@ export default function Run() {
       const g = geoRef.current;
       if (g.kind !== 'fix') return;
       const p = g.position;
+      // lat/lng are NOT NULL on the server — drop the whole row if either
+      // is non-finite rather than risk a row that fails the upsert and wedges
+      // the queue. heading/speed/accuracy are nullable, so coerce non-finite
+      // to null so a single bad reading still produces a usable breadcrumb.
+      if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
       void recordBreadcrumb({
         id: newId(),
         shift_id: shift.id,
         recorded_at: new Date(p.timestamp).toISOString(),
         lat: p.lat,
         lng: p.lng,
-        heading: p.heading,
-        speed: p.speed,
-        accuracy: p.accuracy,
+        heading: coerceFiniteOrNull(p.heading),
+        speed: coerceFiniteOrNull(p.speed),
+        accuracy: coerceFiniteOrNull(p.accuracy),
         synced_at: null,
       });
     };

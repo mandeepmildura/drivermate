@@ -201,6 +201,54 @@ describe('sync.flushPendingMutations', () => {
     expect(await db.stop_events.count()).toBe(2);
   });
 
+  it('recordBreadcrumb rejects non-finite lat (NOT NULL on server, would wedge sync)', async () => {
+    await recordBreadcrumb({
+      id: 'crumb-bad-lat',
+      shift_id: 'shift-x',
+      recorded_at: '2026-04-25T07:50:00Z',
+      lat: Number.NaN,
+      lng: 142.17,
+      heading: 90,
+      speed: 12,
+      accuracy: 5,
+      synced_at: null,
+    });
+    expect(await db.gps_breadcrumbs.count()).toBe(0);
+    expect(await db.pending.count()).toBe(0);
+  });
+
+  it('recordBreadcrumb rejects non-finite lng', async () => {
+    await recordBreadcrumb({
+      id: 'crumb-bad-lng',
+      shift_id: 'shift-x',
+      recorded_at: '2026-04-25T07:50:00Z',
+      lat: -34.2,
+      lng: Number.POSITIVE_INFINITY,
+      heading: 90,
+      speed: 12,
+      accuracy: 5,
+      synced_at: null,
+    });
+    expect(await db.gps_breadcrumbs.count()).toBe(0);
+    expect(await db.pending.count()).toBe(0);
+  });
+
+  it('recordBreadcrumb accepts finite lat/lng with null optional fields', async () => {
+    await recordBreadcrumb({
+      id: 'crumb-ok',
+      shift_id: 'shift-x',
+      recorded_at: '2026-04-25T07:50:00Z',
+      lat: -34.2,
+      lng: 142.17,
+      heading: null,
+      speed: null,
+      accuracy: null,
+      synced_at: null,
+    });
+    expect(await db.gps_breadcrumbs.count()).toBe(1);
+    expect(await db.pending.count()).toBe(1);
+  });
+
   it('survives the unindexed-attempts query (the SchemaError bug)', async () => {
     // Queue 6 mutations and mark some as having high attempts. The bug was
     // db.pending.where('attempts').below(5) throwing because attempts isn't

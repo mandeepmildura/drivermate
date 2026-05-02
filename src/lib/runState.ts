@@ -39,6 +39,11 @@ export function isDuplicateStopLog(
   return currentStopId === lastLoggedStopId;
 }
 
+export function coerceFiniteOrNull(n: number | null | undefined): number | null {
+  if (n == null || !Number.isFinite(n)) return null;
+  return n;
+}
+
 export function formatElapsed(startedAt: string, now: Date = new Date()): string {
   const ms = now.getTime() - new Date(startedAt).getTime();
   const totalSec = Math.max(0, Math.floor(ms / 1000));
