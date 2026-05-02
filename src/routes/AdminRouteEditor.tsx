@@ -12,6 +12,7 @@ import {
   type StopDraft,
 } from '../lib/adminRoutes';
 import type { RouteRow } from '../lib/db';
+import { SaveErrorBanner } from '../components/SaveErrorBanner';
 
 type EditorMode = 'select' | 'draw' | 'add-stop' | 'add-turn';
 
@@ -499,11 +500,7 @@ export default function AdminRouteEditor() {
           Route is locked — unlock to edit.
         </div>
       )}
-      {error && (
-        <div className="shrink-0 px-4 py-2 bg-red-500/10 text-red-200 text-xs border-b border-red-500/20">
-          {error}
-        </div>
-      )}
+      <SaveErrorBanner error={error} onDismiss={() => setError(null)} />
       {info && (
         <div className="shrink-0 px-4 py-2 bg-emerald-500/10 text-emerald-200 text-xs border-b border-emerald-500/20">
           {info}

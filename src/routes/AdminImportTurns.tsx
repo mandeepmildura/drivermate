@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getRouteWithStops, deleteTurnsBetween, insertTurnWaypoints, type TurnDraft } from '../lib/adminRoutes';
 import { getSupabase } from '../lib/supabase';
 import type { RouteRow, RouteStopRow } from '../lib/db';
+import { SaveErrorBanner } from '../components/SaveErrorBanner';
 
 type DirectionsStep = {
   instruction: string;
@@ -236,7 +237,12 @@ export default function AdminImportTurns() {
               </div>
 
               {state.error && (
-                <p className="mt-3 rounded-xl bg-red-500/15 p-3 text-xs text-red-200">{state.error}</p>
+                <div className="mt-3 overflow-hidden rounded-xl">
+                  <SaveErrorBanner
+                    error={state.error}
+                    onDismiss={() => setLeg(legKey, { error: null })}
+                  />
+                </div>
               )}
 
               {state.preview && state.preview.length === 0 && (
