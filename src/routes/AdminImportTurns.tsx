@@ -15,12 +15,31 @@ type DirectionsStep = {
 type LegState = {
   loading: boolean;
   preview: DirectionsStep[] | null;
+  // Parallel array to preview — false to skip that step on commit. Lets
+  // admins drop noise rows (Google's dummy 0 km starter/ender steps, "Continue
+  // onto X" road renames that don't need to be spoken) without dropping the
+  // useful ones.
+  selected: boolean[];
   error: string | null;
   saving: boolean;
   deleting: boolean;
 };
 
-const blankLeg: LegState = { loading: false, preview: null, error: null, saving: false, deleting: false };
+const blankLeg: LegState = { loading: false, preview: null, selected: [], error: null, saving: false, deleting: false };
+
+// Auto-select heuristic for fresh previews: skip "noise" rows by default,
+// keep the rest checked. The driver can override either way before committing.
+//   - 0 metre steps are Google's dummy starter/ender ("Head south on …",
+//     "Slight right" at the destination forecourt). Almost never useful.
+//   - "Continue onto X" with no turn verb is just a road rename, not an
+//     action — the previous waypoint already covered it.
+function defaultSelection(steps: DirectionsStep[]): boolean[] {
+  return steps.map((s) => {
+    if (s.distance_m === 0) return false;
+    if (/^continue (onto|straight)/i.test(s.instruction.trim())) return false;
+    return true;
+  });
+}
 
 // Fetches turn-by-turn between two coords from the /api/google-directions
 // Pages Function. The user's Supabase session token authenticates them as
@@ -98,30 +117,49 @@ export default function AdminImportTurns() {
       setLeg(legKey, { error: 'Missing lat/lng on one of the stops.' });
       return;
     }
-    setLeg(legKey, { loading: true, error: null, preview: null });
+    setLeg(legKey, { loading: true, error: null, preview: null, selected: [] });
     try {
       const steps = await fetchDirections(from.lat, from.lng, to.lat, to.lng);
-      setLeg(legKey, { loading: false, preview: steps });
+      setLeg(legKey, { loading: false, preview: steps, selected: defaultSelection(steps) });
     } catch (err) {
       setLeg(legKey, { loading: false, error: err instanceof Error ? err.message : String(err) });
     }
   }
 
+  function toggleStep(legKey: string, idx: number) {
+    setLegStates((prev) => {
+      const cur = prev[legKey] ?? blankLeg;
+      const next = cur.selected.slice();
+      next[idx] = !next[idx];
+      return { ...prev, [legKey]: { ...cur, selected: next } };
+    });
+  }
+
+  function selectAllSteps(legKey: string, value: boolean) {
+    setLegStates((prev) => {
+      const cur = prev[legKey] ?? blankLeg;
+      if (!cur.preview) return prev;
+      return { ...prev, [legKey]: { ...cur, selected: cur.preview.map(() => value) } };
+    });
+  }
+
   async function commitLeg(legKey: string, from: RouteStopRow) {
     const state = getLeg(legKey);
     if (!state.preview || state.preview.length === 0 || !routeId) return;
+    const drafts: TurnDraft[] = state.preview
+      .filter((_, i) => state.selected[i])
+      .map((s) => ({ instruction_text: s.instruction, lat: s.lat, lng: s.lng }));
+    if (drafts.length === 0) {
+      setLeg(legKey, { error: 'Select at least one turn to insert, or hit Cancel.' });
+      return;
+    }
     setLeg(legKey, { saving: true, error: null });
     try {
-      const drafts: TurnDraft[] = state.preview.map((s) => ({
-        instruction_text: s.instruction,
-        lat: s.lat,
-        lng: s.lng,
-      }));
       await insertTurnWaypoints(routeId, from.sequence, drafts);
       // Reload stops to show the newly inserted turns and the renumbered sequences.
       const fresh = await getRouteWithStops(routeId);
       setStops(fresh.stops);
-      setLeg(legKey, { saving: false, preview: null, error: null });
+      setLeg(legKey, { saving: false, preview: null, selected: [], error: null });
     } catch (err) {
       setLeg(legKey, { saving: false, error: err instanceof Error ? err.message : String(err) });
     }
@@ -249,45 +287,78 @@ export default function AdminImportTurns() {
                 <p className="mt-3 text-xs text-slate-400">No turns returned for this leg.</p>
               )}
 
-              {state.preview && state.preview.length > 0 && (
+              {state.preview && state.preview.length > 0 && (() => {
+                const selectedCount = state.selected.filter(Boolean).length;
+                return (
                 <div className="mt-3 rounded-xl bg-slate-900/40 p-3">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-300">
-                    {state.preview.length} turns to insert
-                  </p>
+                  <div className="mb-2 flex items-baseline justify-between gap-2">
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-300">
+                      {selectedCount} of {state.preview.length} turns selected
+                    </p>
+                    <div className="flex gap-1 text-[10px] font-bold uppercase tracking-widest">
+                      <button
+                        type="button"
+                        onClick={() => selectAllSteps(legKey, true)}
+                        className="text-slate-400 underline-offset-2 hover:underline"
+                      >
+                        all
+                      </button>
+                      <span className="text-slate-600">·</span>
+                      <button
+                        type="button"
+                        onClick={() => selectAllSteps(legKey, false)}
+                        className="text-slate-400 underline-offset-2 hover:underline"
+                      >
+                        none
+                      </button>
+                    </div>
+                  </div>
                   <ol className="flex flex-col gap-1.5 text-xs text-slate-200">
-                    {state.preview.map((s, i) => (
-                      <li key={i} className="flex items-baseline gap-2">
-                        <span className="w-6 shrink-0 text-right font-mono text-slate-500">
-                          {i + 1}.
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          {s.instruction}
-                          <span className="ml-2 text-slate-500">
-                            ({(s.distance_m / 1000).toFixed(1)} km)
-                          </span>
-                        </span>
-                      </li>
-                    ))}
+                    {state.preview.map((s, i) => {
+                      const checked = state.selected[i] ?? true;
+                      return (
+                        <li key={i}>
+                          <label className={`flex cursor-pointer items-baseline gap-2 rounded-md px-1 py-0.5 hover:bg-slate-800/40 ${checked ? '' : 'opacity-40 line-through'}`}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleStep(legKey, i)}
+                              className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-500"
+                            />
+                            <span className="w-6 shrink-0 text-right font-mono text-slate-500">
+                              {i + 1}.
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              {s.instruction}
+                              <span className="ml-2 text-slate-500">
+                                ({(s.distance_m / 1000).toFixed(1)} km)
+                              </span>
+                            </span>
+                          </label>
+                        </li>
+                      );
+                    })}
                   </ol>
                   <div className="mt-3 flex items-center gap-2">
                     <button
                       type="button"
-                      disabled={state.saving || route.locked}
+                      disabled={state.saving || route.locked || selectedCount === 0}
                       onClick={() => void commitLeg(legKey, from)}
                       className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-slate-900 active:bg-emerald-400 disabled:opacity-40"
                     >
-                      {state.saving ? 'Saving…' : `Insert ${state.preview.length} turns`}
+                      {state.saving ? 'Saving…' : `Insert ${selectedCount} turn${selectedCount === 1 ? '' : 's'}`}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setLeg(legKey, { preview: null })}
+                      onClick={() => setLeg(legKey, { preview: null, selected: [] })}
                       className="rounded-xl bg-slate-700 px-4 py-2 text-sm font-bold text-slate-300 active:bg-slate-600"
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
-              )}
+                );
+              })()}
             </li>
           );
         })}
