@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type RouteStopRow, type StopEventRow, type ShiftRow } from './db';
+import { haversineMetres } from './geo';
 
 export type OnTimeStatus = 'early' | 'ontime' | 'delayed' | 'late';
 
@@ -42,6 +43,69 @@ export function isDuplicateStopLog(
 export function coerceFiniteOrNull(n: number | null | undefined): number | null {
   if (n == null || !Number.isFinite(n)) return null;
   return n;
+}
+
+export function isInGpsGap(
+  now: number,
+  lastFixAt: number | null,
+  thresholdMs: number,
+): boolean {
+  if (lastFixAt == null) return false;
+  return now - lastFixAt > thresholdMs;
+}
+
+export type DropoutReason =
+  | 'gap_active'
+  | 'before_stop'
+  | 'no_position'
+  | 'past_stop'
+  | 'no_current_stop';
+
+export interface DropoutDecision {
+  shouldPrompt: boolean;
+  reason: DropoutReason;
+}
+
+export interface DropoutInput {
+  inGap: boolean;
+  busLat: number | null;
+  busLng: number | null;
+  currentStopLat: number | null;
+  currentStopLng: number | null;
+  nextStopLat: number | null;
+  nextStopLng: number | null;
+  passDistanceM: number;
+}
+
+export function decideDropoutPrompt(input: DropoutInput): DropoutDecision {
+  if (input.inGap) return { shouldPrompt: false, reason: 'gap_active' };
+  if (input.busLat == null || input.busLng == null) {
+    return { shouldPrompt: false, reason: 'no_position' };
+  }
+  if (input.currentStopLat == null || input.currentStopLng == null) {
+    return { shouldPrompt: false, reason: 'no_current_stop' };
+  }
+  const distCurrent = haversineMetres(
+    input.busLat,
+    input.busLng,
+    input.currentStopLat,
+    input.currentStopLng,
+  );
+  if (distCurrent <= input.passDistanceM) {
+    return { shouldPrompt: false, reason: 'before_stop' };
+  }
+  if (input.nextStopLat != null && input.nextStopLng != null) {
+    const distNext = haversineMetres(
+      input.busLat,
+      input.busLng,
+      input.nextStopLat,
+      input.nextStopLng,
+    );
+    if (distNext >= distCurrent) {
+      return { shouldPrompt: false, reason: 'before_stop' };
+    }
+  }
+  return { shouldPrompt: true, reason: 'past_stop' };
 }
 
 export function formatElapsed(startedAt: string, now: Date = new Date()): string {
