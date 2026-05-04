@@ -416,7 +416,7 @@ export default function Run() {
       } else if (opts.source === 'skip') {
         utterance = isTurn ? 'Turn skipped.' : `${currentStop.stop_name} skipped.`;
       } else if (isTurn) {
-        utterance = 'Turn complete.';
+        utterance = '';
       } else {
         utterance = `${count} logged at ${currentStop.stop_name}.`;
       }
