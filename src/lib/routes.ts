@@ -77,7 +77,16 @@ export async function loadRouteStops(routeId: string): Promise<CachedFetchResult
     if (error) throw error;
 
     const rows = (data ?? []) as RouteStopRow[];
-    if (rows.length > 0) await db.route_stops.bulkPut(rows);
+    // Replace-then-insert so rows the admin deleted on the server (migration
+    // 0006 made stop_events.route_stop_id ON DELETE SET NULL specifically to
+    // allow this) don't linger in Dexie as duplicates of the new ones. Same
+    // pattern adminRoutes.ts uses after insertTurnWaypoints / deleteTurnsBetween.
+    if (rows.length > 0) {
+      await db.transaction('rw', db.route_stops, async () => {
+        await db.route_stops.where('route_id').equals(routeId).delete();
+        await db.route_stops.bulkPut(rows);
+      });
+    }
     return { rows, source: 'remote' };
   } catch (err) {
     const fallback = await db.route_stops.where('route_id').equals(routeId).sortBy('sequence');

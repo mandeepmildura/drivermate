@@ -86,22 +86,34 @@ export function useRunSnapshot(shift: ShiftRow | null | undefined): RunSnapshot 
   );
 
   return useMemo(() => {
+    // Belt for tablets that cached duplicate route_stops rows before
+    // loadRouteStops learned to replace-on-fetch. Without this the run banner
+    // can stick on a turn the driver already skipped because the stop_event
+    // is keyed to one row's id but currentIndex lands on the other.
+    const dedupedStops: RouteStopRow[] = [];
+    const seenKeys = new Set<string>();
+    for (const s of stops) {
+      const key = `${s.kind}|${s.lat}|${s.lng}|${s.instruction_text ?? ''}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      dedupedStops.push(s);
+    }
     const eventByStopId = new Map(events.map((e) => [e.route_stop_id, e]));
-    let currentIndex = stops.length;
-    for (let i = 0; i < stops.length; i++) {
-      if (!eventByStopId.has(stops[i].id)) {
+    let currentIndex = dedupedStops.length;
+    for (let i = 0; i < dedupedStops.length; i++) {
+      if (!eventByStopId.has(dedupedStops[i].id)) {
         currentIndex = i;
         break;
       }
     }
     const totalPickups = events.reduce((sum, e) => sum + e.pickup_count, 0);
     return {
-      stops,
+      stops: dedupedStops,
       events,
       eventByStopId,
       currentIndex,
       totalPickups,
-      done: currentIndex >= stops.length && stops.length > 0,
+      done: currentIndex >= dedupedStops.length && dedupedStops.length > 0,
     };
   }, [stops, events]);
 }
