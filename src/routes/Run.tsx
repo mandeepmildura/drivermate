@@ -5,7 +5,9 @@ import { loadRoutePath, loadRouteStops } from '../lib/routes';
 import { recordBreadcrumb, recordShift, recordStopEvent } from '../lib/sync';
 import {
   bandClass,
+  coerceFiniteOrNull,
   formatElapsed,
+  isDuplicateStopLog,
   statusForScheduled,
   useActiveShift,
   useRunSnapshot,
@@ -228,7 +230,6 @@ export default function Run() {
     if (autoAdvancedStopRef.current === currentStop.id) return;
 
     if (passedCurrentStop) {
-      autoAdvancedStopRef.current = currentStop.id;
       arrivedSinceRef.current = null;
       logCurrentStop({ source: 'gps' });
       return;
@@ -248,7 +249,6 @@ export default function Run() {
     }
 
     if (Date.now() - arrivedSinceRef.current! >= ARRIVAL_DWELL_MS_STOP) {
-      autoAdvancedStopRef.current = currentStop.id;
       arrivedSinceRef.current = null;
       // Pin this stop as "where the bus is now" — the V/Line panel uses this
       // to auto-expand the boarding/alighting list. Skipped on drove-past
@@ -316,7 +316,6 @@ export default function Run() {
     }
 
     if (Date.now() - offRouteSinceRef.current >= OFF_ROUTE_DWELL_MS) {
-      autoAdvancedStopRef.current = currentStop.id;
       offRouteSinceRef.current = null;
       logCurrentStop({ source: 'off_route' });
     }
@@ -333,15 +332,20 @@ export default function Run() {
       const g = geoRef.current;
       if (g.kind !== 'fix') return;
       const p = g.position;
+      // lat/lng are NOT NULL on the server — drop the whole row if either
+      // is non-finite rather than risk a row that fails the upsert and wedges
+      // the queue. heading/speed/accuracy are nullable, so coerce non-finite
+      // to null so a single bad reading still produces a usable breadcrumb.
+      if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
       void recordBreadcrumb({
         id: newId(),
         shift_id: shift.id,
         recorded_at: new Date(p.timestamp).toISOString(),
         lat: p.lat,
         lng: p.lng,
-        heading: p.heading,
-        speed: p.speed,
-        accuracy: p.accuracy,
+        heading: coerceFiniteOrNull(p.heading),
+        speed: coerceFiniteOrNull(p.speed),
+        accuracy: coerceFiniteOrNull(p.accuracy),
         synced_at: null,
       });
     };
@@ -377,6 +381,8 @@ export default function Run() {
 
   async function logCurrentStop(opts: { source: LogSource } = { source: 'manual' }) {
     if (!shift || !currentStop) return;
+    if (isDuplicateStopLog(currentStop.id, autoAdvancedStopRef.current)) return;
+    autoAdvancedStopRef.current = currentStop.id;
     cancelSpeech();
     const isTurn = currentStop.kind === 'turn';
     const isSkip = opts.source === 'skip' || opts.source === 'off_route';
@@ -410,7 +416,7 @@ export default function Run() {
       } else if (opts.source === 'skip') {
         utterance = isTurn ? 'Turn skipped.' : `${currentStop.stop_name} skipped.`;
       } else if (isTurn) {
-        utterance = 'Turn complete.';
+        utterance = '';
       } else {
         utterance = `${count} logged at ${currentStop.stop_name}.`;
       }

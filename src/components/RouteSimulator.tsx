@@ -28,6 +28,12 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const playTimer = useRef<number | null>(null);
+  // While `pausedUntil` is in the future, the per-second emit loop skips
+  // setSimulatedPosition, so the geo hook stops receiving updates and
+  // GeoStatus.lastFixAt freezes — the same shape a real GPS dropout has.
+  // Used to test the dropout-recovery prompt end-to-end via the simulator.
+  const [pausedUntil, setPausedUntil] = useState<number | null>(null);
+  const [pausedRemaining, setPausedRemaining] = useState(0);
 
   const total = stops.length;
   const current = stops[idx] ?? null;
@@ -43,6 +49,9 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
     const baseLat = current.lat;
     const baseLng = current.lng;
     const emit = () => {
+      // Skip emission while a manual GPS drop is in effect — leaves the
+      // hook's lastFixAt frozen so the dropout-detect logic can fire.
+      if (pausedUntil != null && Date.now() < pausedUntil) return;
       // ~2m of jitter so distanceToStop changes slightly between ticks
       const jitterLat = (Math.random() - 0.5) * 0.00003;
       const jitterLng = (Math.random() - 0.5) * 0.00003;
@@ -51,7 +60,24 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
     emit();
     const id = window.setInterval(emit, 1000);
     return () => window.clearInterval(id);
-  }, [active, idx, current]);
+  }, [active, idx, current, pausedUntil]);
+
+  // Countdown ticker — only runs while a drop is active. Drives the button
+  // label "Drop GPS (12s)" and clears `pausedUntil` once the window expires.
+  useEffect(() => {
+    if (pausedUntil == null) {
+      setPausedRemaining(0);
+      return;
+    }
+    const tick = () => {
+      const remaining = Math.max(0, pausedUntil - Date.now());
+      setPausedRemaining(Math.ceil(remaining / 1000));
+      if (remaining <= 0) setPausedUntil(null);
+    };
+    tick();
+    const id = window.setInterval(tick, 250);
+    return () => window.clearInterval(id);
+  }, [pausedUntil]);
 
   // Stop simulator on unmount
   useEffect(() => {
@@ -167,6 +193,24 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="text-slate-400">GPS gap</span>
+          <button
+            onClick={() => {
+              if (pausedUntil != null) setPausedUntil(null);
+              else setPausedUntil(Date.now() + 30_000);
+            }}
+            disabled={!active}
+            className={`rounded px-2 py-1 disabled:opacity-30 ${
+              pausedUntil != null
+                ? 'bg-amber-500 text-slate-900 font-bold'
+                : 'bg-slate-700 text-slate-200 active:bg-slate-600'
+            }`}
+          >
+            {pausedUntil != null ? `Resume GPS (${pausedRemaining}s)` : 'Drop GPS for 30s'}
+          </button>
         </div>
 
         <p className="text-[10px] text-slate-500 leading-snug">

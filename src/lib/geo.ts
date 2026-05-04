@@ -15,7 +15,7 @@ export type GeoStatus =
   | { kind: 'unsupported' }
   | { kind: 'permission_denied' }
   | { kind: 'unavailable'; message: string }
-  | { kind: 'fix'; position: GeoPosition };
+  | { kind: 'fix'; position: GeoPosition; lastFixAt: number };
 
 const EARTH_RADIUS_M = 6_371_000;
 
@@ -45,6 +45,10 @@ function simulatedToStatus(sim: SimulatedPosition): GeoStatus {
       speed: 0,
       timestamp: Date.now(),
     },
+    // Wall-clock at the moment this status was constructed. We use this for
+    // gap detection rather than position.timestamp because iOS PWAs can
+    // report stale position.timestamp values after backgrounding.
+    lastFixAt: Date.now(),
   };
 }
 
@@ -99,6 +103,11 @@ export function useGeolocation(enabled: boolean): GeoStatus {
               speed: pos.coords.speed,
               timestamp: pos.timestamp,
             },
+            // Wall-clock at the moment the callback fires. iOS PWA Safari
+            // can return a stale pos.timestamp after backgrounding, so we
+            // never use that for gap detection — only Date.now() at this
+            // call site is trustworthy.
+            lastFixAt: Date.now(),
           });
         },
         (err) => {

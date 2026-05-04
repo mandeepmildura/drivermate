@@ -82,12 +82,17 @@ export async function signOutDriver(): Promise<void> {
   await supabase.auth.signOut();
   // Wipe locally cached driver-scoped data so the next driver on this tablet
   // starts clean. Routes/buses/route_stops are shared and stay cached.
-  await db.transaction('rw', db.drivers, db.shifts, db.stop_events, db.pending, async () => {
-    await db.drivers.clear();
-    await db.shifts.clear();
-    await db.stop_events.clear();
-    await db.pending.clear();
-  });
+  await db.transaction(
+    'rw',
+    [db.drivers, db.shifts, db.stop_events, db.gps_breadcrumbs, db.pending],
+    async () => {
+      await db.drivers.clear();
+      await db.shifts.clear();
+      await db.stop_events.clear();
+      await db.gps_breadcrumbs.clear();
+      await db.pending.clear();
+    },
+  );
 }
 
 export interface ProfileResult {

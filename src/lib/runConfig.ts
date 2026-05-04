@@ -10,3 +10,5 @@ export const ARRIVAL_DWELL_MS_STOP = 8_000;
 // approaching it — the maneuver hasn't happened yet, and showing the next
 // instruction at that moment confuses drivers who are still lining up the turn.
 export const BREADCRUMB_INTERVAL_MS = 5_000;
+export const GPS_GAP_THRESHOLD_MS = 20_000;
+export const DROPOUT_PROMPT_REAPPEAR_MS = 10_000;

@@ -34,6 +34,10 @@ export async function recordStopEvent(event: StopEventRow): Promise<void> {
 }
 
 export async function recordBreadcrumb(crumb: GpsBreadcrumbRow): Promise<void> {
+  // Defence-in-depth: server has lat/lng NOT NULL, so a non-finite reading
+  // would wedge the sync queue with a permanent 400. Run.tsx's tick already
+  // filters these, but reject here too so future callers can't bypass.
+  if (!Number.isFinite(crumb.lat) || !Number.isFinite(crumb.lng)) return;
   await db.transaction('rw', db.gps_breadcrumbs, db.pending, async () => {
     await db.gps_breadcrumbs.put(crumb);
     await enqueue('gps_breadcrumb', crumb.id, crumb as unknown as Record<string, unknown>);
