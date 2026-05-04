@@ -16,7 +16,8 @@
       "Bash(git push *)",
       "mcp__claude_ai_Supabase__execute_sql",
       "Bash(git commit --allow-empty -m ' *)",
-      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__list_organizations"
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__list_organizations",
+      "mcp__99ef6b50-d1b5-4436-88c1-5b14226d523b__apply_migration"
     ]
   }
 }
