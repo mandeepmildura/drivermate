@@ -51,7 +51,9 @@ Hands-free turn-by-turn navigation + passenger counter PWA for **CDC Mildura** s
 
 ## Supabase
 
-DriverMate's Supabase project is being migrated to a dedicated account (separate from the FarmControl/irrigation project). Once migration completes, update [reference_supabase.md](../.claude/projects/C--Users-msgil-drivermate/memory/reference_supabase.md) with the new project ID.
+- **Project URL:** `https://aikjhswwmluxzejfsdrw.supabase.co`
+- **Project ref:** `aikjhswwmluxzejfsdrw`
+- Migrated off the shared FarmControl/irrigation project (`lecssjvuskqemjzvjimo`) to a dedicated account. The old project still exists but is dev-only — do not query it for production state.
 
 `.env.local` holds `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` — gitignored. Service-role key stays in the Supabase dashboard, never in code.
 
