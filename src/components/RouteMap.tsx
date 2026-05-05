@@ -2,6 +2,20 @@ import { useEffect, useMemo, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { FeatureCollection, Feature, LineString, Point } from 'geojson';
 import type { RouteStopRow } from '../lib/db';
+import { haversineMetres } from '../lib/geo';
+
+// Bearing derived from two coordinates, in degrees clockwise from true north.
+// Used as a fallback when the GPS fix (or simulator) doesn't supply heading.
+function bearingBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const toDeg = (r: number) => (r * 180) / Math.PI;
+  const φ1 = toRad(lat1);
+  const φ2 = toRad(lat2);
+  const Δλ = toRad(lng2 - lng1);
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
 
 const MILDURA_CENTER: [number, number] = [142.1328, -34.1836];
 
@@ -78,6 +92,11 @@ export default function RouteMap({
   const busMarkerRef = useRef<maplibregl.Marker | null>(null);
   const busElRef = useRef<HTMLDivElement | null>(null);
   const loadedRef = useRef(false);
+  // Last position we placed the bus at, used to derive a heading when the
+  // GPS fix (or the dev simulator) doesn't carry one — without this the map
+  // bearing stays at 0 and never rotates as the bus turns.
+  const lastPosRef = useRef<{ lat: number; lng: number } | null>(null);
+  const lastBearingRef = useRef<number>(0);
 
   const stopsWithCoords = useMemo(
     () => stops.filter((s) => s.lat != null && s.lng != null),
@@ -163,7 +182,6 @@ export default function RouteMap({
 
       if (busLat != null && busLng != null) {
         busMarker.setLngLat([busLng, busLat]).addTo(map);
-        busEl.style.transform = `rotate(${busHeading ?? 0}deg)`;
       }
     });
 
@@ -191,19 +209,42 @@ export default function RouteMap({
   useEffect(() => {
     const map = mapRef.current;
     const marker = busMarkerRef.current;
-    const busEl = busElRef.current;
     if (!map || !marker || busLat == null || busLng == null) return;
 
     marker.setLngLat([busLng, busLat]);
     if (!marker.getElement().parentNode) {
       marker.addTo(map);
     }
-    if (busEl) {
-      busEl.style.transform = `rotate(${busHeading ?? 0}deg)`;
+
+    // Pick the bearing to use for the camera. Real GPS often returns
+    // heading: null at low speed, and the dev simulator never sets one,
+    // so we fall back to the bearing between successive fixes (only once
+    // we've moved far enough to be meaningful — ~5 m). Otherwise the map
+    // would freeze pointing at whatever bearing it last had.
+    let bearing = lastBearingRef.current;
+    if (busHeading != null && Number.isFinite(busHeading)) {
+      bearing = busHeading;
+    } else if (lastPosRef.current) {
+      const moved = haversineMetres(
+        lastPosRef.current.lat,
+        lastPosRef.current.lng,
+        busLat,
+        busLng,
+      );
+      if (moved >= 5) {
+        bearing = bearingBetween(
+          lastPosRef.current.lat,
+          lastPosRef.current.lng,
+          busLat,
+          busLng,
+        );
+      }
     }
+    lastBearingRef.current = bearing;
+    lastPosRef.current = { lat: busLat, lng: busLng };
 
     if (loadedRef.current) {
-      map.easeTo({ center: [busLng, busLat], bearing: busHeading ?? 0, duration: 800 });
+      map.easeTo({ center: [busLng, busLat], bearing, duration: 800 });
     }
   }, [busLat, busLng, busHeading]);
 
