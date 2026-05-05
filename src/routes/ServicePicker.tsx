@@ -22,13 +22,18 @@ export default function ServicePicker() {
           <h1 className="text-3xl font-black">Pick a service</h1>
           {driver && <p className="text-slate-400">{driver.full_name}</p>}
         </div>
-        <button
-          type="button"
-          onClick={() => signOutDriver()}
-          className="text-sm text-slate-400 underline-offset-4 hover:underline"
-        >
-          Sign out
-        </button>
+        <div className="flex items-center gap-3">
+          <Link to="/account/pin" className="text-sm text-slate-400 underline-offset-4 hover:underline">
+            Change PIN
+          </Link>
+          <button
+            type="button"
+            onClick={() => signOutDriver()}
+            className="text-sm text-slate-400 underline-offset-4 hover:underline"
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-col gap-3">
