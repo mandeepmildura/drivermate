@@ -52,6 +52,9 @@ export default function RoutePicker() {
               Admin
             </Link>
           )}
+          <Link to="/account/pin" className="text-sm text-slate-400 underline-offset-4 hover:underline">
+            Change PIN
+          </Link>
           <button
             type="button"
             onClick={() => signOutDriver()}

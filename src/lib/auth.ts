@@ -77,6 +77,43 @@ export async function registerDriver(
   return { ok: true };
 }
 
+export interface ChangePinResult {
+  ok: boolean;
+  error?: string;
+}
+
+export async function changePin(
+  currentPin: string,
+  newPin: string,
+): Promise<ChangePinResult> {
+  if (!/^\d{6,12}$/.test(newPin)) {
+    return { ok: false, error: 'New PIN must be 6–12 digits.' };
+  }
+  if (currentPin === newPin) {
+    return { ok: false, error: 'New PIN must differ from current PIN.' };
+  }
+
+  const supabase = getSupabase();
+  const { data: userData, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !userData.user?.email) {
+    return { ok: false, error: 'Not signed in. Sign in again, then change PIN.' };
+  }
+
+  // Re-verify the current PIN. supabase.auth.updateUser does NOT require it,
+  // and we don't want a stolen session to silently rotate the PIN.
+  const reauth = await supabase.auth.signInWithPassword({
+    email: userData.user.email,
+    password: currentPin,
+  });
+  if (reauth.error) {
+    return { ok: false, error: 'Current PIN is incorrect.' };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPin });
+  if (error) return { ok: false, error: humanise(error) };
+  return { ok: true };
+}
+
 export async function signOutDriver(): Promise<void> {
   const supabase = getSupabase();
   await supabase.auth.signOut();

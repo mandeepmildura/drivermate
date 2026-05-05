@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listAllDrivers, createDriver, updateDriverFlags, type DriverDraft } from '../lib/adminDrivers';
+import {
+  adminResetDriverPin,
+  createDriver,
+  listAllDrivers,
+  updateDriverFlags,
+  type DriverDraft,
+} from '../lib/adminDrivers';
 import type { DriverRow } from '../lib/db';
 
 const blankDraft: DriverDraft = {
@@ -19,6 +25,9 @@ export default function AdminDrivers() {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<DriverDraft>(blankDraft);
   const [saving, setSaving] = useState(false);
+  const [resettingFor, setResettingFor] = useState<string | null>(null);
+  const [resetPin, setResetPin] = useState('');
+  const [resetSubmitting, setResetSubmitting] = useState(false);
 
   function refresh() {
     listAllDrivers()
@@ -61,6 +70,38 @@ export default function AdminDrivers() {
     }
   }
 
+  function startReset(driverId: string) {
+    setError(null);
+    setInfo(null);
+    setResettingFor(driverId);
+    setResetPin('');
+  }
+
+  function cancelReset() {
+    setResettingFor(null);
+    setResetPin('');
+  }
+
+  async function submitReset(driver: DriverRow) {
+    setError(null);
+    setInfo(null);
+    if (!/^\d{6,12}$/.test(resetPin)) {
+      setError('PIN must be 6–12 digits.');
+      return;
+    }
+    setResetSubmitting(true);
+    try {
+      await adminResetDriverPin(driver.id, resetPin);
+      setInfo(`Reset PIN for ${driver.driver_number}. Tell the driver their new PIN in person.`);
+      setResettingFor(null);
+      setResetPin('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setResetSubmitting(false);
+    }
+  }
+
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-6">
       <button
@@ -72,8 +113,10 @@ export default function AdminDrivers() {
       </button>
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black">Drivers</h1>
-          <p className="text-slate-400">Add a driver number and choose who can drive V/Line.</p>
+          <h1 className="text-3xl font-black">Drivers &amp; managers</h1>
+          <p className="text-slate-400">
+            Add a driver, mark depot managers, and reset PINs.
+          </p>
         </div>
         {!adding && (
           <button
@@ -81,7 +124,7 @@ export default function AdminDrivers() {
             onClick={() => { setAdding(true); setError(null); setInfo(null); }}
             className="btn-primary w-auto px-5"
           >
-            + New driver
+            + New profile
           </button>
         )}
       </header>
@@ -91,7 +134,11 @@ export default function AdminDrivers() {
 
       {adding && (
         <div className="rounded-2xl bg-slate-800 p-5 flex flex-col gap-3">
-          <h2 className="text-lg font-bold">New driver</h2>
+          <h2 className="text-lg font-bold">New profile</h2>
+          <p className="text-xs text-slate-400">
+            A depot manager is a driver profile with the manager flag on. They can edit
+            routes and reset other drivers&rsquo; PINs.
+          </p>
           <label className="flex flex-col gap-1 text-xs">
             <span className="text-slate-400">Driver number</span>
             <input
@@ -128,7 +175,7 @@ export default function AdminDrivers() {
               onChange={(e) => setDraft({ ...draft, is_admin: e.target.checked })}
               className="h-4 w-4"
             />
-            Admin (can edit routes and drivers)
+            Depot manager (can edit routes and reset PINs)
           </label>
           <p className="text-xs text-slate-500">
             The driver sets their own numeric PIN when they register on the app.
@@ -162,40 +209,97 @@ export default function AdminDrivers() {
         {drivers?.map((d) => (
           <li
             key={d.id}
-            className="rounded-2xl bg-slate-800 px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            className="rounded-2xl bg-slate-800 px-5 py-4 flex flex-col gap-3"
           >
-            <div>
-              <p className="text-2xl font-bold">{d.driver_number}</p>
-              <p className="text-sm text-slate-400">
-                {d.full_name}
-                {d.is_admin && <span className="ml-2 text-amber-300">· admin</span>}
-                {!d.active && <span className="ml-2 text-red-300">· inactive</span>}
-              </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-2xl font-bold">{d.driver_number}</p>
+                <p className="text-sm text-slate-400">
+                  {d.full_name}
+                  {d.is_admin && <span className="ml-2 text-amber-300">· depot manager</span>}
+                  {!d.active && <span className="ml-2 text-red-300">· inactive</span>}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => toggle(d, { is_admin: !d.is_admin })}
+                  className={`rounded-full px-3 py-1.5 font-bold ${
+                    d.is_admin
+                      ? 'bg-amber-500/20 text-amber-200'
+                      : 'bg-slate-700 text-slate-400'
+                  }`}
+                >
+                  Manager: {d.is_admin ? 'yes' : 'no'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggle(d, { can_drive_vline: !d.can_drive_vline })}
+                  className={`rounded-full px-3 py-1.5 font-bold ${
+                    d.can_drive_vline
+                      ? 'bg-emerald-500/20 text-emerald-200'
+                      : 'bg-slate-700 text-slate-400'
+                  }`}
+                >
+                  V/Line: {d.can_drive_vline ? 'allowed' : 'blocked'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggle(d, { active: !d.active })}
+                  className={`rounded-full px-3 py-1.5 font-bold ${
+                    d.active
+                      ? 'bg-emerald-500/20 text-emerald-200'
+                      : 'bg-red-500/20 text-red-200'
+                  }`}
+                >
+                  {d.active ? 'Active' : 'Inactive'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startReset(d.id)}
+                  className="rounded-full bg-blue-500/20 px-3 py-1.5 font-bold text-blue-200 hover:bg-blue-500/30"
+                >
+                  Reset PIN
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => toggle(d, { can_drive_vline: !d.can_drive_vline })}
-                className={`rounded-full px-3 py-1.5 font-bold ${
-                  d.can_drive_vline
-                    ? 'bg-emerald-500/20 text-emerald-200'
-                    : 'bg-slate-700 text-slate-400'
-                }`}
-              >
-                V/Line: {d.can_drive_vline ? 'allowed' : 'blocked'}
-              </button>
-              <button
-                type="button"
-                onClick={() => toggle(d, { active: !d.active })}
-                className={`rounded-full px-3 py-1.5 font-bold ${
-                  d.active
-                    ? 'bg-emerald-500/20 text-emerald-200'
-                    : 'bg-red-500/20 text-red-200'
-                }`}
-              >
-                {d.active ? 'Active' : 'Inactive'}
-              </button>
-            </div>
+            {resettingFor === d.id && (
+              <div className="rounded-xl bg-slate-900 p-4 flex flex-col gap-3">
+                <p className="text-xs text-slate-400">
+                  Choose a temporary 6–12 digit PIN for {d.full_name}. Tell them in
+                  person — they can change it themselves from the driver menu.
+                </p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={resetPin}
+                  onChange={(e) => setResetPin(e.target.value.replace(/\D/g, ''))}
+                  placeholder="New PIN"
+                  className="rounded-lg bg-slate-800 px-3 py-2 text-lg tracking-[0.4em]"
+                  minLength={6}
+                  maxLength={12}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => submitReset(d)}
+                    disabled={resetSubmitting}
+                    className="rounded-full bg-blue-500 px-5 py-2 text-sm font-bold text-white active:bg-blue-400 disabled:opacity-50"
+                  >
+                    {resetSubmitting ? 'Resetting…' : 'Set PIN'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelReset}
+                    className="rounded-full bg-slate-700 px-5 py-2 text-sm text-slate-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </li>
         ))}
       </ul>

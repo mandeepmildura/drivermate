@@ -42,6 +42,21 @@ export async function createDriver(draft: DriverDraft): Promise<DriverRow> {
   return row;
 }
 
+export async function adminResetDriverPin(
+  driverId: string,
+  newPin: string,
+): Promise<void> {
+  if (!/^\d{6,12}$/.test(newPin)) {
+    throw new Error('PIN must be 6–12 digits.');
+  }
+  const supabase = getSupabase();
+  const { error } = await supabase.rpc('admin_reset_driver_pin', {
+    p_driver_id: driverId,
+    p_new_pin: newPin,
+  });
+  if (error) throw error;
+}
+
 export async function updateDriverFlags(
   driverId: string,
   patch: Partial<Pick<DriverRow, 'active' | 'can_drive_vline' | 'is_admin' | 'full_name'>>,

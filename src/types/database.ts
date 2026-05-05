@@ -375,6 +375,10 @@ export type Database = {
       current_driver_id: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       register_driver: { Args: { p_driver_number: string }; Returns: undefined }
+      admin_reset_driver_pin: {
+        Args: { p_driver_id: string; p_new_pin: string }
+        Returns: undefined
+      }
       insert_turn_waypoints: {
         Args: { p_route_id: string; p_after_sequence: number; p_turns: Json }
         Returns: Database['public']['Tables']['route_stops']['Row'][]

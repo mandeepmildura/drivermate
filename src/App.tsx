@@ -12,6 +12,7 @@ import AdminImportTurns from './routes/AdminImportTurns';
 import AdminRouteEditor from './routes/AdminRouteEditor';
 import AdminDrivers from './routes/AdminDrivers';
 import AdminReplay from './routes/AdminReplay';
+import ChangePin from './routes/ChangePin';
 import Cdc from './routes/Cdc';
 import { startSyncLoop } from './lib/sync';
 import { startErrorReporter } from './lib/errorReporter';
@@ -71,6 +72,14 @@ export default function App() {
             element={
               <RequireDriver>
                 <EndOfRun />
+              </RequireDriver>
+            }
+          />
+          <Route
+            path="/account/pin"
+            element={
+              <RequireDriver>
+                <ChangePin />
               </RequireDriver>
             }
           />

@@ -121,7 +121,7 @@ export default function Login() {
         </Link>
       </p>
       <p className="text-center text-xs text-slate-500">
-        Forgot your PIN? Speak to the depot supervisor.
+        Forgot your PIN? Speak to the depot manager — they can reset it.
       </p>
     </main>
   );

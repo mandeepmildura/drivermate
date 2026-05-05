@@ -52,9 +52,9 @@ export default function Register() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-3xl bg-slate-800 p-6 shadow-xl">
         <p className="text-sm text-slate-400">
-          Your driver number must already be added by the depot supervisor.
-          Choose a numeric PIN you&rsquo;ll remember — you can&rsquo;t change it later
-          without help from the supervisor.
+          Your driver number must already be added by the depot manager.
+          Choose a numeric PIN you&rsquo;ll remember — you can change it from the
+          driver menu once you&rsquo;re signed in.
         </p>
 
         <label className="flex flex-col gap-2">
