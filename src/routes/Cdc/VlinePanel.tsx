@@ -70,7 +70,7 @@ export default function VlinePanel({
       <button
         type="button"
         onClick={() => navigate(`/cdc/manifest?return=/run&route=${expectedRouteCode}`)}
-        className="shrink-0 w-full bg-amber-500/15 px-4 py-3 text-left text-sm text-amber-200 active:bg-amber-500/25"
+        className="shrink-0 w-full bg-amber-500/15 px-4 py-3 text-left text-sm text-amber-800 active:bg-amber-500/25"
       >
         <span className="font-bold">{message}</span>
         <span className="ml-2 opacity-80">— tap to read</span>
@@ -159,26 +159,26 @@ export default function VlinePanel({
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="shrink-0 w-full bg-slate-800 px-4 py-3 text-left active:bg-slate-700"
+        className="shrink-0 w-full bg-surface-container px-4 py-3 text-left active:bg-surface-container-high"
         style={{ boxShadow: `inset 3px 0 0 0 ${theme.edgeColor}` }}
         aria-label="Expand V/Line panel"
       >
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between gap-3">
-            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
               <span className={`rounded px-1.5 py-0.5 text-[10px] ${theme.badge}`}>
                 {expectedRouteCode}
               </span>
               Next stop
             </p>
-            <span className="text-lg text-slate-500" aria-hidden>
+            <span className="text-lg text-on-surface-variant" aria-hidden>
               ›
             </span>
           </div>
-          <p className="truncate text-base font-bold text-slate-100">
+          <p className="truncate text-base font-bold text-on-surface">
             {stopLabel}
             {currentStop && (
-              <span className="ml-2 text-xs font-medium text-slate-400">
+              <span className="ml-2 text-xs font-medium text-on-surface-variant">
                 ↑{boardedHere}/{boarding.length} ↓{alighting.length}
               </span>
             )}
@@ -191,19 +191,19 @@ export default function VlinePanel({
 
   // ── Expanded sheet ───────────────────────────────────────────────────────
   return (
-    <div className="shrink-0 max-h-[60vh] overflow-y-auto bg-slate-800">
+    <div className="shrink-0 max-h-[60vh] overflow-y-auto bg-surface-container">
       <div
-        className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-slate-800 px-4 pb-3 pt-3"
+        className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-surface-container px-4 pb-3 pt-3"
         style={{ boxShadow: `inset 3px 0 0 0 ${ROUTE_THEMES[expectedRouteCode].edgeColor}` }}
       >
         <div>
-          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
             <span className={`rounded px-1.5 py-0.5 ${ROUTE_THEMES[expectedRouteCode].badge}`}>
               {expectedRouteCode}
             </span>
             {currentStop ? 'Current stop' : 'Awaiting stop…'}
           </p>
-          <h2 className="text-2xl font-black leading-tight text-slate-100">
+          <h2 className="text-2xl font-black leading-tight text-on-surface">
             {currentStop ? STOP_NAMES[currentStop] : '—'}
           </h2>
         </div>
@@ -211,7 +211,7 @@ export default function VlinePanel({
           type="button"
           onClick={() => setExpanded(false)}
           aria-label="Close panel"
-          className="rounded-full bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-100 active:bg-slate-600"
+          className="rounded-full bg-surface-container-high px-3 py-1.5 text-xs font-bold text-on-surface active:bg-surface-container-highest"
         >
           ▾
         </button>
@@ -235,39 +235,39 @@ export default function VlinePanel({
 
       {currentStop && (
         <>
-          <section className="bg-slate-900/40 px-4 py-3">
+          <section className="bg-surface/40 px-4 py-3">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <h3 className="flex items-baseline gap-2 text-sm font-bold uppercase tracking-wide text-emerald-300">
+              <h3 className="flex items-baseline gap-2 text-sm font-bold uppercase tracking-wide text-primary">
                 Boarding
-                <span className="text-base font-black tabular-nums text-slate-100">
+                <span className="text-base font-black tabular-nums text-on-surface">
                   {boardedHere}/{boarding.length}
                 </span>
-                <span className="text-[10px] font-medium normal-case tracking-normal text-slate-400">
+                <span className="text-[10px] font-medium normal-case tracking-normal text-on-surface-variant">
                   boarded · booked
                 </span>
               </h3>
               <button
                 type="button"
                 onClick={() => setWalkOpen(!walkOpen)}
-                className="text-xs font-bold text-blue-300 active:text-blue-200"
+                className="text-xs font-bold text-secondary active:text-secondary"
               >
                 {walkOpen ? 'Cancel' : '+ Walk-up'}
               </button>
             </div>
 
             {walkOpen && (
-              <div className="mb-3 rounded-xl bg-slate-800 p-3">
+              <div className="mb-3 rounded-xl bg-surface-container p-3">
                 <input
                   type="text"
                   placeholder="Name (optional)"
                   value={walkName}
                   onChange={(e) => setWalkName(e.target.value)}
-                  className="mb-2 w-full rounded-lg bg-slate-900 px-3 py-2 text-base"
+                  className="mb-2 w-full rounded-lg bg-surface px-3 py-2 text-base"
                 />
                 <select
                   value={walkDest}
                   onChange={(e) => setWalkDest(e.target.value as StopCode)}
-                  className="mb-2 w-full rounded-lg bg-slate-900 px-3 py-2 text-base"
+                  className="mb-2 w-full rounded-lg bg-surface px-3 py-2 text-base"
                 >
                   {stops.map((s) => (
                     <option key={s} value={s}>
@@ -278,7 +278,7 @@ export default function VlinePanel({
                 <button
                   type="button"
                   onClick={addWalkUp}
-                  className="min-h-touch w-full rounded-xl bg-emerald-500 px-3 py-2 text-base font-bold text-slate-900 active:bg-emerald-400"
+                  className="min-h-touch w-full rounded-xl bg-primary px-3 py-2 text-base font-bold text-on-primary active:bg-primary-container"
                 >
                   Add walk-up
                 </button>
@@ -286,12 +286,12 @@ export default function VlinePanel({
             )}
 
             {boarding.length === 0 && !isFirstStop && (
-              <p className="text-sm text-slate-500">No expected boardings here.</p>
+              <p className="text-sm text-on-surface-variant">No expected boardings here.</p>
             )}
             {boarding.length > 0 && (
               isFirstStop ? (
-                <details className="rounded-xl bg-slate-800/40 p-3">
-                  <summary className="cursor-pointer text-sm font-bold text-slate-300">
+                <details className="rounded-xl bg-surface-container/40 p-3">
+                  <summary className="cursor-pointer text-sm font-bold text-on-surface-variant">
                     Edit list (per-row tap)
                   </summary>
                   <div className="mt-3">{renderBoardingGroups(boardingGroups, setPassenger)}</div>
@@ -304,7 +304,7 @@ export default function VlinePanel({
 
           <section className="px-4 pb-4 pt-3">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-300">
+              <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-800">
                 Alighting <CountBadge n={alighting.length} tone="amber" />
               </h3>
               {alighting.length > 1 && (
@@ -313,8 +313,8 @@ export default function VlinePanel({
                   onClick={markAllOff}
                   className={`min-h-[2.25rem] rounded-full px-3 py-1 text-xs font-bold ${
                     allOff
-                      ? 'bg-slate-700 text-slate-100 active:bg-slate-600'
-                      : 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
+                      ? 'bg-surface-container-high text-on-surface active:bg-surface-container-highest'
+                      : 'bg-primary text-on-primary active:bg-primary-container'
                   }`}
                 >
                   {allOff ? 'Undo all' : `✓ All off (${remainingToMark.length})`}
@@ -322,17 +322,17 @@ export default function VlinePanel({
               )}
             </div>
             {alighting.length === 0 ? (
-              <p className="text-sm text-slate-500">No expected alightings.</p>
+              <p className="text-sm text-on-surface-variant">No expected alightings.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {alighting.map((p) => (
                   <li
                     key={p.id}
-                    className="flex items-center justify-between gap-2 rounded-xl bg-slate-900/40 p-3"
+                    className="flex items-center justify-between gap-2 rounded-xl bg-surface/40 p-3"
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <SeatPill seat={p.seat} />
-                      <span className="truncate text-sm font-bold text-slate-100">{p.name}</span>
+                      <span className="truncate text-sm font-bold text-on-surface">{p.name}</span>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {/* Wasn't on bus = retroactive no-show. The first-stop
@@ -348,8 +348,8 @@ export default function VlinePanel({
                         }
                         className={`min-h-[2.75rem] rounded-lg px-3 text-xs font-bold ${
                           p.status === 'noshow'
-                            ? 'bg-slate-500 text-slate-900 active:bg-slate-400'
-                            : 'bg-slate-700 text-slate-300 active:bg-slate-600'
+                            ? 'bg-outline-variant text-on-primary active:bg-outline'
+                            : 'bg-surface-container-high text-on-surface-variant active:bg-surface-container-highest'
                         }`}
                       >
                         {p.status === 'noshow' ? '✓ No-show' : "Wasn't on"}
@@ -363,8 +363,8 @@ export default function VlinePanel({
                         }
                         className={`min-h-[2.75rem] rounded-lg px-4 text-sm font-bold ${
                           p.status === 'alighted'
-                            ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
-                            : 'bg-slate-700 text-slate-100 active:bg-slate-600'
+                            ? 'bg-primary text-on-primary active:bg-primary-container'
+                            : 'bg-surface-container-high text-on-surface active:bg-surface-container-highest'
                         }`}
                       >
                         {p.status === 'alighted' ? '✓ Off' : 'Off'}
@@ -394,9 +394,9 @@ function renderBoardingGroups(
         return (
           <div key={group.destination ?? 'all'} className="flex flex-col gap-2">
             {group.destination && (
-              <div className="flex items-baseline justify-between px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+              <div className="flex items-baseline justify-between px-1 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
                 <span>→ {STOP_NAMES[group.destination]}</span>
-                <span className="tabular-nums text-slate-300">
+                <span className="tabular-nums text-on-surface-variant">
                   {groupOn}/{group.passengers.length}
                 </span>
               </div>
@@ -414,15 +414,15 @@ function renderBoardingGroups(
                       aria-pressed={isOn}
                       className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
                         isOn
-                          ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
-                          : 'bg-slate-800 text-slate-100 active:bg-slate-700'
+                          ? 'bg-primary text-on-primary active:bg-primary-container'
+                          : 'bg-surface-container text-on-surface active:bg-surface-container-high'
                       }`}
                     >
                       <span
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-black ${
                           isOn
-                            ? 'bg-slate-900/15 text-slate-900'
-                            : 'border-2 border-slate-600 text-transparent'
+                            ? 'bg-black/15 text-on-primary'
+                            : 'border-2 border-outline-variant text-transparent'
                         }`}
                         aria-hidden
                       >
@@ -431,10 +431,10 @@ function renderBoardingGroups(
                       <SeatPill seat={p.seat} tone={isOn ? 'inverse' : 'default'} />
                       <span className="min-w-0 flex-1 truncate text-sm">
                         <span className="font-bold">{p.name}</span>{' '}
-                        <span className={`text-xs ${isOn ? 'text-slate-700' : 'text-slate-400'}`}>
+                        <span className={`text-xs ${isOn ? 'text-on-primary' : 'text-on-surface-variant'}`}>
                           → {STOP_NAMES[p.leaveStop]}
                         </span>
-                        {p.priority && <span className="ml-1 text-amber-400">★</span>}
+                        {p.priority && <span className="ml-1 text-amber-700">★</span>}
                       </span>
                     </button>
                   </li>

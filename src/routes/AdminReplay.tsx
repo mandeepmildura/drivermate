@@ -273,42 +273,42 @@ export default function AdminReplay() {
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-6">
       <header className="flex items-center justify-between gap-3">
-        <Link to="/admin" className="rounded-xl bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700">
+        <Link to="/admin" className="rounded-xl bg-surface-container px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container-high">
           ← Back to admin
         </Link>
         <h1 className="text-3xl font-black">Replay run</h1>
         <span />
       </header>
 
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-on-surface-variant">
         Pick a past shift. Its breadcrumbs feed the GPS simulator and the same auto-advance + audio
         logic the live run screen uses runs locally — useful for re-testing nav fixes on a known route.
         Nothing is written back.
       </p>
 
       {!selectedShiftId && (
-        <section className="flex flex-col gap-2 rounded-2xl bg-slate-800 p-4">
+        <section className="flex flex-col gap-2 rounded-2xl bg-surface-container p-4">
           <h2 className="font-bold">Recent shifts</h2>
-          {shiftsError && <p className="text-sm text-red-300">{shiftsError}</p>}
-          {!shifts && !shiftsError && <p className="text-slate-400">Loading…</p>}
-          {shifts && shifts.length === 0 && <p className="text-slate-400">No shifts found.</p>}
+          {shiftsError && <p className="text-sm text-red-800">{shiftsError}</p>}
+          {!shifts && !shiftsError && <p className="text-on-surface-variant">Loading…</p>}
+          {shifts && shifts.length === 0 && <p className="text-on-surface-variant">No shifts found.</p>}
           <ul className="flex flex-col gap-1">
             {shifts?.map((s) => (
               <li key={s.id}>
                 <button
                   type="button"
                   onClick={() => loadShift(s)}
-                  className="flex w-full items-center justify-between rounded-xl bg-slate-900 px-4 py-3 text-left hover:bg-slate-700"
+                  className="flex w-full items-center justify-between rounded-xl bg-surface px-4 py-3 text-left hover:bg-surface-container-high"
                 >
                   <div>
                     <div className="font-bold">
                       {s.route_number ?? s.route_id.slice(0, 8)} · driver {s.driver_number ?? '?'}
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-on-surface-variant">
                       {new Date(s.started_at).toLocaleString()} · {s.ended_at ? 'ended' : 'open'}
                     </div>
                   </div>
-                  <span className="text-xs text-slate-400">{s.id.slice(0, 8)}</span>
+                  <span className="text-xs text-on-surface-variant">{s.id.slice(0, 8)}</span>
                 </button>
               </li>
             ))}
@@ -316,11 +316,11 @@ export default function AdminReplay() {
         </section>
       )}
 
-      {loading && <p className="text-slate-400">Loading shift data…</p>}
-      {loadError && <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-200">{loadError}</p>}
+      {loading && <p className="text-on-surface-variant">Loading shift data…</p>}
+      {loadError && <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-800">{loadError}</p>}
 
       {selectedShiftId && crumbs && stops && (
-        <section className="flex flex-col gap-3 rounded-2xl bg-slate-800 p-4">
+        <section className="flex flex-col gap-3 rounded-2xl bg-surface-container p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-bold">Playback</h2>
             <button
@@ -331,7 +331,7 @@ export default function AdminReplay() {
                 setStops(null);
                 reset();
               }}
-              className="text-xs text-slate-400 underline-offset-4 hover:underline"
+              className="text-xs text-on-surface-variant underline-offset-4 hover:underline"
             >
               pick a different shift
             </button>
@@ -341,14 +341,14 @@ export default function AdminReplay() {
             <button
               type="button"
               onClick={() => setIsPlaying((p) => !p)}
-              className="rounded-xl bg-emerald-500 px-5 py-3 font-bold text-slate-900 hover:bg-emerald-400"
+              className="rounded-xl bg-primary px-5 py-3 font-bold text-on-primary hover:bg-primary-container"
             >
               {isPlaying ? 'Pause' : 'Play'}
             </button>
             <button
               type="button"
               onClick={reset}
-              className="rounded-xl bg-slate-700 px-4 py-3 text-sm text-slate-200 hover:bg-slate-600"
+              className="rounded-xl bg-surface-container-high px-4 py-3 text-sm text-on-surface hover:bg-surface-container-highest"
             >
               Reset
             </button>
@@ -360,8 +360,8 @@ export default function AdminReplay() {
                   onClick={() => setSpeed(s)}
                   className={`rounded-lg px-3 py-2 text-sm ${
                     speed === s
-                      ? 'bg-emerald-500 text-slate-900'
-                      : 'bg-slate-900 text-slate-300 hover:bg-slate-700'
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface text-on-surface-variant hover:bg-surface-container-high'
                   }`}
                 >
                   {s}×
@@ -387,59 +387,59 @@ export default function AdminReplay() {
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <div className="text-slate-400">Breadcrumb</div>
+              <div className="text-on-surface-variant">Breadcrumb</div>
               <div className="font-mono">
                 {crumbIndex + 1} / {crumbs.length}
               </div>
             </div>
             <div>
-              <div className="text-slate-400">Time elapsed</div>
+              <div className="text-on-surface-variant">Time elapsed</div>
               <div className="font-mono">
                 {elapsed != null ? formatSeconds(elapsed) : '—'} / {total != null ? formatSeconds(total) : '—'}
               </div>
             </div>
             <div>
-              <div className="text-slate-400">Position</div>
+              <div className="text-on-surface-variant">Position</div>
               <div className="font-mono text-xs">
                 {currentCrumb ? `${currentCrumb.lat.toFixed(5)}, ${currentCrumb.lng.toFixed(5)}` : '—'}
               </div>
             </div>
             <div>
-              <div className="text-slate-400">Heading</div>
+              <div className="text-on-surface-variant">Heading</div>
               <div className="font-mono">
                 {currentCrumb?.heading != null ? `${Math.round(currentCrumb.heading)}°` : '—'}
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl bg-slate-900 p-3">
-            <div className="text-xs uppercase tracking-widest text-slate-400">Next instruction</div>
+          <div className="rounded-xl bg-surface p-3">
+            <div className="text-xs uppercase tracking-widest text-on-surface-variant">Next instruction</div>
             {currentStop ? (
               <>
                 <div className="text-lg font-bold">
                   #{stopIndex + 1} ({currentStop.kind}) · {currentStop.stop_name}
                 </div>
                 {currentStop.instruction_text && (
-                  <div className="text-sm text-slate-300">{currentStop.instruction_text}</div>
+                  <div className="text-sm text-on-surface-variant">{currentStop.instruction_text}</div>
                 )}
-                <div className="mt-1 text-sm text-slate-400">
+                <div className="mt-1 text-sm text-on-surface-variant">
                   in {distanceToStop != null ? formatMetres(distanceToStop) : '—'}
                 </div>
               </>
             ) : (
-              <div className="text-slate-300">Run finished — all stops done.</div>
+              <div className="text-on-surface-variant">Run finished — all stops done.</div>
             )}
           </div>
 
-          <div className="rounded-xl bg-slate-900 p-3">
-            <div className="text-xs uppercase tracking-widest text-slate-400">Event log</div>
+          <div className="rounded-xl bg-surface p-3">
+            <div className="text-xs uppercase tracking-widest text-on-surface-variant">Event log</div>
             {events.length === 0 ? (
-              <div className="text-sm text-slate-500">No events yet — press Play.</div>
+              <div className="text-sm text-on-surface-variant">No events yet — press Play.</div>
             ) : (
               <ol className="mt-2 flex flex-col gap-1 font-mono text-xs">
                 {events.map((e) => (
-                  <li key={`${e.at}-${e.text}`} className="text-slate-200">
-                    <span className="text-slate-500">{new Date(e.at).toLocaleTimeString()}</span>{' '}
+                  <li key={`${e.at}-${e.text}`} className="text-on-surface">
+                    <span className="text-on-surface-variant">{new Date(e.at).toLocaleTimeString()}</span>{' '}
                     {e.text}
                   </li>
                 ))}

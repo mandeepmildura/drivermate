@@ -20,16 +20,16 @@ export default function ServicePicker() {
       <header className="flex items-baseline justify-between">
         <div>
           <h1 className="text-3xl font-black">Pick a service</h1>
-          {driver && <p className="text-slate-400">{driver.full_name}</p>}
+          {driver && <p className="text-on-surface-variant">{driver.full_name}</p>}
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/account/pin" className="text-sm text-slate-400 underline-offset-4 hover:underline">
+          <Link to="/account/pin" className="text-sm text-on-surface-variant underline-offset-4 hover:underline">
             Change PIN
           </Link>
           <button
             type="button"
             onClick={() => signOutDriver()}
-            className="text-sm text-slate-400 underline-offset-4 hover:underline"
+            className="text-sm text-on-surface-variant underline-offset-4 hover:underline"
           >
             Sign out
           </button>
@@ -39,14 +39,14 @@ export default function ServicePicker() {
       <div className="flex flex-col gap-3">
         <Link
           to="/routes"
-          className="min-h-touch rounded-3xl bg-emerald-500 px-5 py-6 text-slate-900 active:bg-emerald-400"
+          className="min-h-touch rounded-3xl bg-primary px-5 py-6 text-on-primary active:bg-primary-container"
         >
           <div className="text-2xl font-black">School</div>
           <div className="text-sm font-semibold opacity-80">CDC Mildura school bus runs</div>
         </Link>
         <Link
           to="/cdc/routes"
-          className="min-h-touch rounded-3xl bg-sky-500 px-5 py-6 text-slate-900 active:bg-sky-400"
+          className="min-h-touch rounded-3xl bg-secondary px-5 py-6 text-on-primary active:bg-secondary-container"
         >
           <div className="text-2xl font-black">V/Line</div>
           <div className="text-sm font-semibold opacity-80">Mildura ↔ Bendigo coach</div>

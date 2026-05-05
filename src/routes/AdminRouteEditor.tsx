@@ -404,7 +404,7 @@ export default function AdminRouteEditor() {
 
   if (loading) {
     return (
-      <main className="flex min-h-full items-center justify-center text-slate-400">Loading…</main>
+      <main className="flex min-h-full items-center justify-center text-on-surface-variant">Loading…</main>
     );
   }
 
@@ -415,7 +415,7 @@ export default function AdminRouteEditor() {
       disabled={!editable}
       title={title}
       className={`rounded-xl px-3 py-1.5 text-sm font-bold transition-colors disabled:opacity-40 ${
-        mode === m ? activeClass : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+        mode === m ? activeClass : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'
       }`}
     >
       {label}
@@ -423,10 +423,10 @@ export default function AdminRouteEditor() {
   );
 
   return (
-    <main className="flex h-full flex-col bg-slate-900 overflow-hidden">
+    <main className="flex h-full flex-col bg-surface overflow-hidden">
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2 border-b border-slate-700 bg-slate-900">
-        <Link to="/admin" className="text-sm text-slate-400 hover:text-slate-200">
+      <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2 border-b border-outline-variant bg-surface">
+        <Link to="/admin" className="text-sm text-on-surface-variant hover:text-on-surface">
           ← All routes
         </Link>
         <span className="font-bold text-sm truncate">
@@ -436,7 +436,7 @@ export default function AdminRouteEditor() {
           {!isNew && serverRoute && (
             <Link
               to={`/admin/${serverRoute.id}/import-turns`}
-              className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-bold uppercase tracking-widest text-purple-200 hover:bg-purple-500/30"
+              className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-bold uppercase tracking-widest text-purple-800 hover:bg-purple-500/30"
               title="Import turn-by-turn from Google Maps"
             >
               Import turns
@@ -448,8 +448,8 @@ export default function AdminRouteEditor() {
               onClick={toggleLocked}
               className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest ${
                 serverRoute.locked
-                  ? 'bg-emerald-500/20 text-emerald-200'
-                  : 'bg-amber-500/20 text-amber-200'
+                  ? 'bg-primary/20 text-primary'
+                  : 'bg-amber-500/20 text-amber-800'
               }`}
             >
               {serverRoute.locked ? 'Unlock' : 'Lock'}
@@ -459,7 +459,7 @@ export default function AdminRouteEditor() {
             type="button"
             onClick={save}
             disabled={saving || !editable}
-            className="rounded-full bg-blue-500 px-4 py-1 text-sm font-bold text-white active:bg-blue-400 disabled:opacity-50"
+            className="rounded-full bg-secondary px-4 py-1 text-sm font-bold text-white active:bg-secondary-container disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -467,17 +467,17 @@ export default function AdminRouteEditor() {
       </div>
 
       {/* ── Toolbar ────────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-slate-700 bg-slate-800 overflow-x-auto">
-        {modeBtn('select', 'Select', 'Click a marker to edit it', 'bg-blue-500 text-white')}
-        {modeBtn('draw', 'Draw line', 'Click on map to trace the route', 'bg-blue-500 text-white')}
-        {modeBtn('add-stop', '+ Stop', 'Click on map to place a scheduled stop', 'bg-emerald-600 text-white')}
-        {modeBtn('add-turn', '+ Turn', 'Click on map to place a turn waypoint', 'bg-amber-500 text-slate-900')}
+      <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-outline-variant bg-surface-container overflow-x-auto">
+        {modeBtn('select', 'Select', 'Click a marker to edit it', 'bg-secondary text-white')}
+        {modeBtn('draw', 'Draw line', 'Click on map to trace the route', 'bg-secondary text-white')}
+        {modeBtn('add-stop', '+ Stop', 'Click on map to place a scheduled stop', 'bg-primary text-white')}
+        {modeBtn('add-turn', '+ Turn', 'Click on map to place a turn waypoint', 'bg-amber-500 text-on-primary')}
         <div className="ml-auto flex gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setPathCoords((p) => p.slice(0, -1))}
             disabled={!editable || pathCoords.length === 0}
-            className="rounded-xl bg-slate-700 px-3 py-1.5 text-sm disabled:opacity-40"
+            className="rounded-xl bg-surface-container-high px-3 py-1.5 text-sm disabled:opacity-40"
             title="Undo last route point"
           >
             Undo
@@ -486,7 +486,7 @@ export default function AdminRouteEditor() {
             type="button"
             onClick={() => { if (confirm('Clear the entire route line?')) setPathCoords([]); }}
             disabled={!editable || pathCoords.length === 0}
-            className="rounded-xl bg-slate-700 px-3 py-1.5 text-sm text-red-300 disabled:opacity-40"
+            className="rounded-xl bg-surface-container-high px-3 py-1.5 text-sm text-red-800 disabled:opacity-40"
             title="Clear route line"
           >
             Clear line
@@ -496,20 +496,20 @@ export default function AdminRouteEditor() {
 
       {/* ── Notifications ──────────────────────────────────────────────── */}
       {locked && !isNew && (
-        <div className="shrink-0 px-4 py-2 bg-amber-500/10 text-amber-200 text-xs border-b border-amber-500/20">
+        <div className="shrink-0 px-4 py-2 bg-amber-500/10 text-amber-800 text-xs border-b border-amber-500/20">
           Route is locked — unlock to edit.
         </div>
       )}
       <SaveErrorBanner error={error} onDismiss={() => setError(null)} />
       {info && (
-        <div className="shrink-0 px-4 py-2 bg-emerald-500/10 text-emerald-200 text-xs border-b border-emerald-500/20">
+        <div className="shrink-0 px-4 py-2 bg-primary/10 text-primary text-xs border-b border-primary/20">
           {info}
         </div>
       )}
 
       {/* ── Mode hint ──────────────────────────────────────────────────── */}
       {mode !== 'select' && (
-        <div className="shrink-0 px-4 py-1.5 bg-blue-500/10 text-blue-200 text-xs border-b border-blue-500/20 text-center">
+        <div className="shrink-0 px-4 py-1.5 bg-secondary/10 text-secondary text-xs border-b border-secondary/20 text-center">
           {mode === 'draw' && 'Click on the map to trace the route line. Use Undo to remove the last point.'}
           {mode === 'add-stop' && 'Click on the map to place a scheduled stop (school, formal pickup).'}
           {mode === 'add-turn' && 'Click on the map to place a turn waypoint.'}
@@ -524,58 +524,58 @@ export default function AdminRouteEditor() {
         </div>
 
         {/* Side panel */}
-        <div className="flex-1 lg:flex-none lg:w-80 flex flex-col gap-0 border-t lg:border-t-0 lg:border-l border-slate-700 overflow-y-auto bg-slate-900">
+        <div className="flex-1 lg:flex-none lg:w-80 flex flex-col gap-0 border-t lg:border-t-0 lg:border-l border-outline-variant overflow-y-auto bg-surface">
 
           {/* Route metadata */}
-          <div className="p-4 border-b border-slate-700">
-            <p className="text-xs uppercase tracking-widest text-slate-400 mb-3">Route details</p>
+          <div className="p-4 border-b border-outline-variant">
+            <p className="text-xs uppercase tracking-widest text-on-surface-variant mb-3">Route details</p>
             <div className="flex flex-col gap-2">
               <label className="flex flex-col gap-1 text-xs">
-                <span className="text-slate-400">Route number</span>
+                <span className="text-on-surface-variant">Route number</span>
                 <input
                   type="text"
                   value={route.route_number}
                   onChange={(e) => patchRoute({ route_number: e.target.value })}
                   disabled={!editable}
                   placeholder="715102"
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg bg-surface-container px-3 py-2 text-sm disabled:opacity-50"
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs">
-                <span className="text-slate-400">Display number</span>
+                <span className="text-on-surface-variant">Display number</span>
                 <input
                   type="text"
                   value={route.display_number ?? ''}
                   onChange={(e) => patchRoute({ display_number: e.target.value || null })}
                   disabled={!editable}
                   placeholder="712"
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg bg-surface-container px-3 py-2 text-sm disabled:opacity-50"
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs">
-                <span className="text-slate-400">Description</span>
+                <span className="text-on-surface-variant">Description</span>
                 <input
                   type="text"
                   value={route.description ?? ''}
                   onChange={(e) => patchRoute({ description: e.target.value || null })}
                   disabled={!editable}
                   placeholder="AM run"
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg bg-surface-container px-3 py-2 text-sm disabled:opacity-50"
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs">
-                <span className="text-slate-400">Service type</span>
+                <span className="text-on-surface-variant">Service type</span>
                 <select
                   value={route.service_type}
                   onChange={(e) => patchRoute({ service_type: e.target.value as RouteDraft['service_type'] })}
                   disabled={!editable}
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg bg-surface-container px-3 py-2 text-sm disabled:opacity-50"
                 >
                   <option value="school">School</option>
                   <option value="vline">V/Line coach</option>
                 </select>
               </label>
-              <label className="flex items-center gap-2 text-xs text-slate-300">
+              <label className="flex items-center gap-2 text-xs text-on-surface-variant">
                 <input
                   type="checkbox"
                   checked={route.active}
@@ -592,13 +592,13 @@ export default function AdminRouteEditor() {
           {selectedStop ? (
             <div className="p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-widest text-slate-400">
+                <p className="text-xs uppercase tracking-widest text-on-surface-variant">
                   {selectedStop.kind === 'turn' ? 'Turn waypoint' : 'Scheduled stop'}
                 </p>
                 <button
                   type="button"
                   onClick={() => setSelectedKey(null)}
-                  className="text-slate-500 text-xs hover:text-slate-300"
+                  className="text-on-surface-variant text-xs hover:text-on-surface-variant"
                 >
                   ✕
                 </button>
@@ -613,8 +613,8 @@ export default function AdminRouteEditor() {
                     disabled={!editable}
                     className={`flex-1 rounded-lg py-1 text-xs font-bold disabled:opacity-50 ${
                       selectedStop.kind === k
-                        ? k === 'stop' ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-slate-900'
-                        : 'bg-slate-700 text-slate-300'
+                        ? k === 'stop' ? 'bg-primary text-white' : 'bg-amber-500 text-on-primary'
+                        : 'bg-surface-container-high text-on-surface-variant'
                     }`}
                   >
                     {k === 'stop' ? 'Stop' : 'Turn'}
@@ -623,21 +623,21 @@ export default function AdminRouteEditor() {
               </div>
 
               <label className="flex flex-col gap-1 text-xs">
-                <span className="text-slate-400">{selectedStop.kind === 'turn' ? 'Label' : 'Stop name'}</span>
+                <span className="text-on-surface-variant">{selectedStop.kind === 'turn' ? 'Label' : 'Stop name'}</span>
                 <input
                   type="text"
                   value={selectedStop.stop_name}
                   onChange={(e) => patchStop(selectedStop._key, { stop_name: e.target.value })}
                   disabled={!editable}
                   placeholder={selectedStop.kind === 'turn' ? 'Eleventh St & Deakin Ave' : "St Joseph's College"}
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg bg-surface-container px-3 py-2 text-sm disabled:opacity-50"
                   autoFocus
                 />
               </label>
 
               {selectedStop.kind === 'stop' && (
                 <label className="flex flex-col gap-1 text-xs">
-                  <span className="text-slate-400">Scheduled time</span>
+                  <span className="text-on-surface-variant">Scheduled time</span>
                   <input
                     type="time"
                     value={selectedStop.scheduled_time?.slice(0, 5) ?? ''}
@@ -647,13 +647,13 @@ export default function AdminRouteEditor() {
                       })
                     }
                     disabled={!editable}
-                    className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                    className="rounded-lg bg-surface-container px-3 py-2 text-sm disabled:opacity-50"
                   />
                 </label>
               )}
 
               <label className="flex flex-col gap-1 text-xs">
-                <span className="text-slate-400">Instruction (shown on screen)</span>
+                <span className="text-on-surface-variant">Instruction (shown on screen)</span>
                 <input
                   type="text"
                   value={selectedStop.instruction_text ?? ''}
@@ -662,12 +662,12 @@ export default function AdminRouteEditor() {
                   }
                   disabled={!editable}
                   placeholder="Turn LEFT into Eleventh Street"
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg bg-surface-container px-3 py-2 text-sm disabled:opacity-50"
                 />
               </label>
 
               <label className="flex flex-col gap-1 text-xs">
-                <span className="text-slate-400">Audio cue (spoken aloud)</span>
+                <span className="text-on-surface-variant">Audio cue (spoken aloud)</span>
                 <input
                   type="text"
                   value={selectedStop.instruction_audio_cue ?? ''}
@@ -676,12 +676,12 @@ export default function AdminRouteEditor() {
                   }
                   disabled={!editable}
                   placeholder="Defaults to instruction text"
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg bg-surface-container px-3 py-2 text-sm disabled:opacity-50"
                 />
               </label>
 
               <label className="flex flex-col gap-1 text-xs">
-                <span className="text-slate-400">Sequence</span>
+                <span className="text-on-surface-variant">Sequence</span>
                 <input
                   type="number"
                   min={1}
@@ -690,11 +690,11 @@ export default function AdminRouteEditor() {
                     patchStop(selectedStop._key, { sequence: Number(e.target.value) || 1 })
                   }
                   disabled={!editable}
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg bg-surface-container px-3 py-2 text-sm disabled:opacity-50"
                 />
               </label>
 
-              <div className="pt-1 text-xs text-slate-500">
+              <div className="pt-1 text-xs text-on-surface-variant">
                 Lat: {selectedStop.lat?.toFixed(6)} · Lng: {selectedStop.lng?.toFixed(6)}
                 <br />Drag the marker on the map to reposition.
               </div>
@@ -703,14 +703,14 @@ export default function AdminRouteEditor() {
                 type="button"
                 onClick={() => removeStop(selectedStop._key)}
                 disabled={!editable}
-                className="rounded-xl bg-red-500/20 px-3 py-2 text-sm text-red-300 font-bold disabled:opacity-50"
+                className="rounded-xl bg-red-500/20 px-3 py-2 text-sm text-red-800 font-bold disabled:opacity-50"
               >
                 Delete this {selectedStop.kind}
               </button>
             </div>
           ) : (
-            <div className="p-4 text-xs text-slate-500">
-              <p className="font-semibold text-slate-400 mb-2">
+            <div className="p-4 text-xs text-on-surface-variant">
+              <p className="font-semibold text-on-surface-variant mb-2">
                 {stops.length} waypoint{stops.length !== 1 ? 's' : ''}
                 {pathCoords.length > 0 ? ` · ${pathCoords.length}-point route line` : ' · No route line drawn'}
               </p>

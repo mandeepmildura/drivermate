@@ -49,11 +49,11 @@ export default function Login() {
     <main className="mx-auto flex min-h-full max-w-md flex-col justify-center gap-6 p-6">
       <header className="text-center">
         <h1 className="text-4xl font-black tracking-tight">DriverMate</h1>
-        <p className="mt-2 text-slate-400">CDC Mildura</p>
+        <p className="mt-2 text-on-surface-variant">CDC Mildura</p>
       </header>
 
       {!configured && (
-        <div className="rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-200">
+        <div className="rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-800">
           Supabase isn&rsquo;t configured. Set <code>VITE_SUPABASE_URL</code> and{' '}
           <code>VITE_SUPABASE_ANON_KEY</code> in <code>.env.local</code>, then restart the dev server.
         </div>
@@ -64,7 +64,7 @@ export default function Login() {
           Supabase project. The anon key is public (RLS-protected), so
           surfacing its project ref isn't a credential leak. */}
       {isSimEnabled() && (
-        <div className="rounded-2xl bg-slate-700/60 p-3 text-[11px] font-mono text-slate-300 break-all">
+        <div className="rounded-2xl bg-surface-container-high/60 p-3 text-[11px] font-mono text-on-surface-variant break-all">
           URL: {String(import.meta.env.VITE_SUPABASE_URL ?? '(not set)')}
           <br />
           Anon key length: {String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').length} chars
@@ -73,40 +73,40 @@ export default function Login() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-3xl bg-slate-800 p-6 shadow-xl">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-3xl bg-surface-container p-6 shadow-xl">
         <label className="flex flex-col gap-2">
-          <span className="text-sm uppercase tracking-widest text-slate-400">Driver number</span>
+          <span className="text-sm uppercase tracking-widest text-on-surface-variant">Driver number</span>
           <input
             type="text"
             inputMode="text"
             autoComplete="username"
             value={driverNumber}
             onChange={(e) => setDriverNumber(e.target.value)}
-            className="min-h-touch rounded-2xl bg-slate-900 px-4 py-3 text-2xl tracking-widest focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-touch rounded-2xl bg-surface px-4 py-3 text-2xl tracking-widest focus:outline-none focus:ring-2 focus:ring-primary"
             disabled={submitting || !configured}
             required
           />
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm uppercase tracking-widest text-slate-400">PIN</span>
+          <span className="text-sm uppercase tracking-widest text-on-surface-variant">PIN</span>
           <input
             type="password"
             inputMode="numeric"
             autoComplete="current-password"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
-            className="min-h-touch rounded-2xl bg-slate-900 px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-touch rounded-2xl bg-surface px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary"
             disabled={submitting || !configured}
             required
           />
         </label>
 
         {error && (
-          <p className="rounded-xl bg-red-500/15 p-3 text-sm text-red-200">{error}</p>
+          <p className="rounded-xl bg-red-500/15 p-3 text-sm text-red-800">{error}</p>
         )}
         {profileError && !error && (
-          <p className="rounded-xl bg-amber-500/15 p-3 text-sm text-amber-200">{profileError}</p>
+          <p className="rounded-xl bg-amber-500/15 p-3 text-sm text-amber-800">{profileError}</p>
         )}
 
         <button type="submit" className="btn-primary" disabled={submitting || !configured}>
@@ -114,13 +114,13 @@ export default function Login() {
         </button>
       </form>
 
-      <p className="text-center text-sm text-slate-400">
+      <p className="text-center text-sm text-on-surface-variant">
         First time?{' '}
-        <Link to="/register" className="text-emerald-300 underline-offset-4 hover:underline">
+        <Link to="/register" className="text-primary underline-offset-4 hover:underline">
           Set up your PIN
         </Link>
       </p>
-      <p className="text-center text-xs text-slate-500">
+      <p className="text-center text-xs text-on-surface-variant">
         Forgot your PIN? Speak to the depot manager — they can reset it.
       </p>
     </main>

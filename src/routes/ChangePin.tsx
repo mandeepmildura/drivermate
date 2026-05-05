@@ -42,19 +42,19 @@ export default function ChangePin() {
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="self-start rounded-xl bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
+        className="self-start rounded-xl bg-surface-container px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container-high"
       >
         ← Back
       </button>
 
       <header>
         <h1 className="text-3xl font-black">Change PIN</h1>
-        {driver && <p className="text-slate-400">{driver.full_name} · {driver.driver_number}</p>}
+        {driver && <p className="text-on-surface-variant">{driver.full_name} · {driver.driver_number}</p>}
       </header>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-3xl bg-slate-800 p-6 shadow-xl">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-3xl bg-surface-container p-6 shadow-xl">
         <label className="flex flex-col gap-2">
-          <span className="text-sm uppercase tracking-widest text-slate-400">Current PIN</span>
+          <span className="text-sm uppercase tracking-widest text-on-surface-variant">Current PIN</span>
           <input
             type="password"
             inputMode="numeric"
@@ -62,7 +62,7 @@ export default function ChangePin() {
             autoComplete="current-password"
             value={currentPin}
             onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ''))}
-            className="min-h-touch rounded-2xl bg-slate-900 px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-touch rounded-2xl bg-surface px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary"
             disabled={submitting}
             minLength={6}
             maxLength={12}
@@ -71,7 +71,7 @@ export default function ChangePin() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm uppercase tracking-widest text-slate-400">New PIN (6–12 digits)</span>
+          <span className="text-sm uppercase tracking-widest text-on-surface-variant">New PIN (6–12 digits)</span>
           <input
             type="password"
             inputMode="numeric"
@@ -79,7 +79,7 @@ export default function ChangePin() {
             autoComplete="new-password"
             value={newPin}
             onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-            className="min-h-touch rounded-2xl bg-slate-900 px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-touch rounded-2xl bg-surface px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary"
             disabled={submitting}
             minLength={6}
             maxLength={12}
@@ -88,7 +88,7 @@ export default function ChangePin() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm uppercase tracking-widest text-slate-400">Confirm new PIN</span>
+          <span className="text-sm uppercase tracking-widest text-on-surface-variant">Confirm new PIN</span>
           <input
             type="password"
             inputMode="numeric"
@@ -96,7 +96,7 @@ export default function ChangePin() {
             autoComplete="new-password"
             value={confirmPin}
             onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
-            className="min-h-touch rounded-2xl bg-slate-900 px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-h-touch rounded-2xl bg-surface px-4 py-3 text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary"
             disabled={submitting}
             minLength={6}
             maxLength={12}
@@ -104,15 +104,15 @@ export default function ChangePin() {
           />
         </label>
 
-        {error && <p className="rounded-xl bg-red-500/15 p-3 text-sm text-red-200">{error}</p>}
-        {info && <p className="rounded-xl bg-emerald-500/15 p-3 text-sm text-emerald-200">{info}</p>}
+        {error && <p className="rounded-xl bg-red-500/15 p-3 text-sm text-red-800">{error}</p>}
+        {info && <p className="rounded-xl bg-primary/15 p-3 text-sm text-primary">{info}</p>}
 
         <button type="submit" className="btn-primary" disabled={submitting}>
           {submitting ? 'Updating…' : 'Update PIN'}
         </button>
       </form>
 
-      <p className="text-center text-xs text-slate-500">
+      <p className="text-center text-xs text-on-surface-variant">
         Forgot your current PIN? Speak to the depot manager — they can reset it.
       </p>
     </main>
