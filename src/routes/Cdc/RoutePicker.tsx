@@ -50,16 +50,16 @@ export default function CdcRoutePicker() {
       <header className="flex items-baseline justify-between">
         <div>
           <h1 className="text-3xl font-black">V/Line routes</h1>
-          {driver && <p className="text-slate-400">{driver.full_name}</p>}
+          {driver && <p className="text-on-surface-variant">{driver.full_name}</p>}
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/services" className="text-sm text-blue-400 underline-offset-4 hover:underline">
+          <Link to="/services" className="text-sm text-secondary underline-offset-4 hover:underline">
             ← Services
           </Link>
           <button
             type="button"
             onClick={() => signOutDriver()}
-            className="text-sm text-slate-400 underline-offset-4 hover:underline"
+            className="text-sm text-on-surface-variant underline-offset-4 hover:underline"
           >
             Sign out
           </button>
@@ -67,19 +67,19 @@ export default function CdcRoutePicker() {
       </header>
 
       {source === 'cache' && (
-        <div className="rounded-2xl bg-amber-500/10 p-3 text-sm text-amber-200">
+        <div className="rounded-2xl bg-amber-500/10 p-3 text-sm text-amber-800">
           Showing cached routes — couldn&rsquo;t reach the depot.
         </div>
       )}
 
-      {routes === null && <p className="text-slate-400">Loading routes…</p>}
+      {routes === null && <p className="text-on-surface-variant">Loading routes…</p>}
       {routes !== null && routes.length === 0 && (
-        <div className="rounded-2xl bg-slate-800 p-4 text-slate-300">
+        <div className="rounded-2xl bg-surface-container p-4 text-on-surface-variant">
           <p>No active V/Line routes.</p>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-on-surface-variant">
             Ask an admin to add or activate a V/Line route in the admin panel.
           </p>
-          {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
+          {error && <p className="mt-2 text-xs text-red-800">{error}</p>}
         </div>
       )}
 

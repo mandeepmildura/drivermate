@@ -78,20 +78,20 @@ export default function BusConfirm() {
       <header className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-3xl font-black">Which bus today?</h1>
-          <p className="text-slate-400">
+          <p className="text-on-surface-variant">
             Pick the bus you&rsquo;re actually driving (not the route&rsquo;s usual bus).
           </p>
         </div>
         <Link
           to={routesBackTarget}
-          className="shrink-0 text-sm text-blue-400 underline-offset-4 hover:underline"
+          className="shrink-0 text-sm text-secondary underline-offset-4 hover:underline"
         >
           {routesBackLabel}
         </Link>
       </header>
 
       {buses === null ? (
-        <p className="text-slate-400">Loading buses…</p>
+        <p className="text-on-surface-variant">Loading buses…</p>
       ) : (
         <ul className="grid grid-cols-2 gap-3">
           {buses.map((bus) => {
@@ -106,8 +106,8 @@ export default function BusConfirm() {
                   }}
                   className={`min-h-touch w-full rounded-2xl px-4 py-4 text-2xl font-bold ${
                     selected
-                      ? 'bg-emerald-500 text-slate-900'
-                      : 'bg-slate-800 text-slate-100 active:bg-slate-700'
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface-container text-on-surface active:bg-surface-container-high'
                   }`}
                 >
                   {bus.bus_code}
@@ -122,7 +122,7 @@ export default function BusConfirm() {
       )}
 
       <label className="mt-2 flex flex-col gap-2">
-        <span className="text-sm uppercase tracking-widest text-slate-400">Other bus code</span>
+        <span className="text-sm uppercase tracking-widest text-on-surface-variant">Other bus code</span>
         <input
           type="text"
           value={override}
@@ -131,12 +131,12 @@ export default function BusConfirm() {
             setBus(null, e.target.value);
           }}
           placeholder="e.g. M99"
-          className="min-h-touch rounded-2xl bg-slate-900 px-4 py-3 text-2xl tracking-widest focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="min-h-touch rounded-2xl bg-surface px-4 py-3 text-2xl tracking-widest focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </label>
 
       {error && (
-        <p className="rounded-xl bg-red-500/15 p-3 text-sm text-red-200">{error}</p>
+        <p className="rounded-xl bg-red-500/15 p-3 text-sm text-red-800">{error}</p>
       )}
 
       <button type="button" onClick={startShift} className="btn-primary mt-4" disabled={submitting}>

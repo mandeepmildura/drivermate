@@ -153,7 +153,7 @@ export default function RouteMap({
           'circle-color': [
             'case',
             ['==', ['get', 'isCurrent'], true], '#ffffff',
-            ['==', ['get', 'kind'], 'stop'], '#10b981',
+            ['==', ['get', 'kind'], 'stop'], '#00685f',
             '#f59e0b',
           ],
           'circle-stroke-width': 2,

@@ -19,20 +19,20 @@ export default function Admin() {
       <button
         type="button"
         onClick={() => navigate('/')}
-        className="self-start rounded-xl bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
+        className="self-start rounded-xl bg-surface-container px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container-high"
       >
         ← Back to driver
       </button>
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-black">Route admin</h1>
-          <p className="text-slate-400">Edit routes here. Drivers see published routes read-only.</p>
+          <p className="text-on-surface-variant">Edit routes here. Drivers see published routes read-only.</p>
         </div>
         <div className="flex gap-2">
-          <Link to="/admin/drivers" className="rounded-full bg-slate-700 px-5 py-2 text-sm text-slate-200 hover:bg-slate-600">
+          <Link to="/admin/drivers" className="rounded-full bg-surface-container-high px-5 py-2 text-sm text-on-surface hover:bg-surface-container-highest">
             Drivers
           </Link>
-          <Link to="/admin/replay" className="rounded-full bg-slate-700 px-5 py-2 text-sm text-slate-200 hover:bg-slate-600">
+          <Link to="/admin/replay" className="rounded-full bg-surface-container-high px-5 py-2 text-sm text-on-surface hover:bg-surface-container-highest">
             Replay
           </Link>
           <Link to="/admin/new" className="btn-primary w-auto px-5">
@@ -42,11 +42,11 @@ export default function Admin() {
       </header>
 
       {error && (
-        <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-200">{error}</p>
+        <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-800">{error}</p>
       )}
-      {routes === null && !error && <p className="text-slate-400">Loading routes…</p>}
+      {routes === null && !error && <p className="text-on-surface-variant">Loading routes…</p>}
       {routes?.length === 0 && (
-        <p className="rounded-2xl bg-slate-800 p-4 text-slate-300">
+        <p className="rounded-2xl bg-surface-container p-4 text-on-surface-variant">
           No routes yet. Tap “New route” to add one.
         </p>
       )}
@@ -56,11 +56,11 @@ export default function Admin() {
           <li key={route.id}>
             <Link
               to={`/admin/${route.id}`}
-              className="flex items-center justify-between rounded-2xl bg-slate-800 px-5 py-4 hover:bg-slate-700"
+              className="flex items-center justify-between rounded-2xl bg-surface-container px-5 py-4 hover:bg-surface-container-high"
             >
               <div>
                 <p className="text-2xl font-bold">{route.route_number}</p>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-on-surface-variant">
                   {route.display_number ? `Bus display ${route.display_number}` : 'No display number'}
                   {route.description ? ` · ${route.description}` : ''}
                 </p>
@@ -69,20 +69,20 @@ export default function Admin() {
                 <span
                   className={`rounded-full px-3 py-1 ${
                     route.service_type === 'vline'
-                      ? 'bg-purple-500/20 text-purple-200'
-                      : 'bg-sky-500/20 text-sky-200'
+                      ? 'bg-purple-500/20 text-purple-800'
+                      : 'bg-secondary/20 text-secondary'
                   }`}
                 >
                   {route.service_type === 'vline' ? 'V/Line' : 'School'}
                 </span>
                 {!route.active && (
-                  <span className="rounded-full bg-slate-700 px-3 py-1 text-slate-300">Inactive</span>
+                  <span className="rounded-full bg-surface-container-high px-3 py-1 text-on-surface-variant">Inactive</span>
                 )}
                 <span
                   className={`rounded-full px-3 py-1 ${
                     route.locked
-                      ? 'bg-amber-500/20 text-amber-200'
-                      : 'bg-emerald-500/20 text-emerald-200'
+                      ? 'bg-amber-500/20 text-amber-800'
+                      : 'bg-primary/20 text-primary'
                   }`}
                 >
                   {route.locked ? 'Locked' : 'Editable'}

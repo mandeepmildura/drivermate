@@ -5,8 +5,8 @@
 export function SeatPill({ seat, tone = 'default' }: { seat: string; tone?: 'default' | 'inverse' }) {
   const cls =
     tone === 'inverse'
-      ? 'bg-slate-900/15 text-slate-900'
-      : 'bg-emerald-500/20 text-emerald-300';
+      ? 'bg-black/15 text-on-primary'
+      : 'bg-primary/20 text-primary';
   return (
     <span className={`inline-flex h-7 min-w-[2.5rem] shrink-0 items-center justify-center rounded-full px-2 font-mono text-xs font-bold ${cls}`}>
       {seat || '—'}
@@ -17,8 +17,8 @@ export function SeatPill({ seat, tone = 'default' }: { seat: string; tone?: 'def
 export function CountBadge({ n, tone }: { n: number; tone: 'emerald' | 'amber' }) {
   const cls =
     tone === 'emerald'
-      ? 'bg-emerald-500/20 text-emerald-300'
-      : 'bg-amber-500/20 text-amber-300';
+      ? 'bg-primary/20 text-primary'
+      : 'bg-amber-500/20 text-amber-800';
   return (
     <span
       className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${cls}`}

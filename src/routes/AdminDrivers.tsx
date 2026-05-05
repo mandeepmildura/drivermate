@@ -107,14 +107,14 @@ export default function AdminDrivers() {
       <button
         type="button"
         onClick={() => navigate('/admin')}
-        className="self-start rounded-xl bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
+        className="self-start rounded-xl bg-surface-container px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container-high"
       >
         ← Back to admin
       </button>
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black">Drivers &amp; managers</h1>
-          <p className="text-slate-400">
+          <p className="text-on-surface-variant">
             Add a driver, mark depot managers, and reset PINs.
           </p>
         </div>
@@ -129,37 +129,37 @@ export default function AdminDrivers() {
         )}
       </header>
 
-      {error && <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-200">{error}</p>}
-      {info && <p className="rounded-2xl bg-emerald-500/15 p-3 text-sm text-emerald-200">{info}</p>}
+      {error && <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-800">{error}</p>}
+      {info && <p className="rounded-2xl bg-primary/15 p-3 text-sm text-primary">{info}</p>}
 
       {adding && (
-        <div className="rounded-2xl bg-slate-800 p-5 flex flex-col gap-3">
+        <div className="rounded-2xl bg-surface-container p-5 flex flex-col gap-3">
           <h2 className="text-lg font-bold">New profile</h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-on-surface-variant">
             A depot manager is a driver profile with the manager flag on. They can edit
             routes and reset other drivers&rsquo; PINs.
           </p>
           <label className="flex flex-col gap-1 text-xs">
-            <span className="text-slate-400">Driver number</span>
+            <span className="text-on-surface-variant">Driver number</span>
             <input
               type="text"
               value={draft.driver_number}
               onChange={(e) => setDraft({ ...draft, driver_number: e.target.value })}
               placeholder="e.g. 105"
-              className="rounded-lg bg-slate-900 px-3 py-2 text-sm"
+              className="rounded-lg bg-surface px-3 py-2 text-sm"
             />
           </label>
           <label className="flex flex-col gap-1 text-xs">
-            <span className="text-slate-400">Full name</span>
+            <span className="text-on-surface-variant">Full name</span>
             <input
               type="text"
               value={draft.full_name}
               onChange={(e) => setDraft({ ...draft, full_name: e.target.value })}
               placeholder="e.g. Mandeep Gill"
-              className="rounded-lg bg-slate-900 px-3 py-2 text-sm"
+              className="rounded-lg bg-surface px-3 py-2 text-sm"
             />
           </label>
-          <label className="flex items-center gap-2 text-sm text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-on-surface-variant">
             <input
               type="checkbox"
               checked={draft.can_drive_vline}
@@ -168,7 +168,7 @@ export default function AdminDrivers() {
             />
             Can drive V/Line coach routes
           </label>
-          <label className="flex items-center gap-2 text-sm text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-on-surface-variant">
             <input
               type="checkbox"
               checked={draft.is_admin}
@@ -177,7 +177,7 @@ export default function AdminDrivers() {
             />
             Depot manager (can edit routes and reset PINs)
           </label>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-on-surface-variant">
             The driver sets their own numeric PIN when they register on the app.
           </p>
           <div className="flex gap-2">
@@ -185,14 +185,14 @@ export default function AdminDrivers() {
               type="button"
               onClick={add}
               disabled={saving}
-              className="rounded-full bg-blue-500 px-5 py-2 text-sm font-bold text-white active:bg-blue-400 disabled:opacity-50"
+              className="rounded-full bg-secondary px-5 py-2 text-sm font-bold text-white active:bg-secondary-container disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Create driver'}
             </button>
             <button
               type="button"
               onClick={() => { setAdding(false); setDraft(blankDraft); }}
-              className="rounded-full bg-slate-700 px-5 py-2 text-sm text-slate-200"
+              className="rounded-full bg-surface-container-high px-5 py-2 text-sm text-on-surface"
             >
               Cancel
             </button>
@@ -200,24 +200,24 @@ export default function AdminDrivers() {
         </div>
       )}
 
-      {drivers === null && !error && <p className="text-slate-400">Loading drivers…</p>}
+      {drivers === null && !error && <p className="text-on-surface-variant">Loading drivers…</p>}
       {drivers?.length === 0 && (
-        <p className="rounded-2xl bg-slate-800 p-4 text-slate-300">No drivers yet.</p>
+        <p className="rounded-2xl bg-surface-container p-4 text-on-surface-variant">No drivers yet.</p>
       )}
 
       <ul className="flex flex-col gap-2">
         {drivers?.map((d) => (
           <li
             key={d.id}
-            className="rounded-2xl bg-slate-800 px-5 py-4 flex flex-col gap-3"
+            className="rounded-2xl bg-surface-container px-5 py-4 flex flex-col gap-3"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-2xl font-bold">{d.driver_number}</p>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-on-surface-variant">
                   {d.full_name}
-                  {d.is_admin && <span className="ml-2 text-amber-300">· depot manager</span>}
-                  {!d.active && <span className="ml-2 text-red-300">· inactive</span>}
+                  {d.is_admin && <span className="ml-2 text-amber-800">· depot manager</span>}
+                  {!d.active && <span className="ml-2 text-red-800">· inactive</span>}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -226,8 +226,8 @@ export default function AdminDrivers() {
                   onClick={() => toggle(d, { is_admin: !d.is_admin })}
                   className={`rounded-full px-3 py-1.5 font-bold ${
                     d.is_admin
-                      ? 'bg-amber-500/20 text-amber-200'
-                      : 'bg-slate-700 text-slate-400'
+                      ? 'bg-amber-500/20 text-amber-800'
+                      : 'bg-surface-container-high text-on-surface-variant'
                   }`}
                 >
                   Manager: {d.is_admin ? 'yes' : 'no'}
@@ -237,8 +237,8 @@ export default function AdminDrivers() {
                   onClick={() => toggle(d, { can_drive_vline: !d.can_drive_vline })}
                   className={`rounded-full px-3 py-1.5 font-bold ${
                     d.can_drive_vline
-                      ? 'bg-emerald-500/20 text-emerald-200'
-                      : 'bg-slate-700 text-slate-400'
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-surface-container-high text-on-surface-variant'
                   }`}
                 >
                   V/Line: {d.can_drive_vline ? 'allowed' : 'blocked'}
@@ -248,8 +248,8 @@ export default function AdminDrivers() {
                   onClick={() => toggle(d, { active: !d.active })}
                   className={`rounded-full px-3 py-1.5 font-bold ${
                     d.active
-                      ? 'bg-emerald-500/20 text-emerald-200'
-                      : 'bg-red-500/20 text-red-200'
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-red-500/20 text-red-800'
                   }`}
                 >
                   {d.active ? 'Active' : 'Inactive'}
@@ -257,15 +257,15 @@ export default function AdminDrivers() {
                 <button
                   type="button"
                   onClick={() => startReset(d.id)}
-                  className="rounded-full bg-blue-500/20 px-3 py-1.5 font-bold text-blue-200 hover:bg-blue-500/30"
+                  className="rounded-full bg-secondary/20 px-3 py-1.5 font-bold text-secondary hover:bg-secondary/30"
                 >
                   Reset PIN
                 </button>
               </div>
             </div>
             {resettingFor === d.id && (
-              <div className="rounded-xl bg-slate-900 p-4 flex flex-col gap-3">
-                <p className="text-xs text-slate-400">
+              <div className="rounded-xl bg-surface p-4 flex flex-col gap-3">
+                <p className="text-xs text-on-surface-variant">
                   Choose a temporary 6–12 digit PIN for {d.full_name}. Tell them in
                   person — they can change it themselves from the driver menu.
                 </p>
@@ -276,7 +276,7 @@ export default function AdminDrivers() {
                   value={resetPin}
                   onChange={(e) => setResetPin(e.target.value.replace(/\D/g, ''))}
                   placeholder="New PIN"
-                  className="rounded-lg bg-slate-800 px-3 py-2 text-lg tracking-[0.4em]"
+                  className="rounded-lg bg-surface-container px-3 py-2 text-lg tracking-[0.4em]"
                   minLength={6}
                   maxLength={12}
                   autoFocus
@@ -286,14 +286,14 @@ export default function AdminDrivers() {
                     type="button"
                     onClick={() => submitReset(d)}
                     disabled={resetSubmitting}
-                    className="rounded-full bg-blue-500 px-5 py-2 text-sm font-bold text-white active:bg-blue-400 disabled:opacity-50"
+                    className="rounded-full bg-secondary px-5 py-2 text-sm font-bold text-white active:bg-secondary-container disabled:opacity-50"
                   >
                     {resetSubmitting ? 'Resetting…' : 'Set PIN'}
                   </button>
                   <button
                     type="button"
                     onClick={cancelReset}
-                    className="rounded-full bg-slate-700 px-5 py-2 text-sm text-slate-200"
+                    className="rounded-full bg-surface-container-high px-5 py-2 text-sm text-on-surface"
                   >
                     Cancel
                   </button>

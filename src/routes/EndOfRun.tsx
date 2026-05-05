@@ -59,28 +59,28 @@ export default function EndOfRun() {
       <header>
         <h1 className="text-3xl font-black">Run complete</h1>
         {lastShift && (
-          <p className="text-slate-400">
+          <p className="text-on-surface-variant">
             {formatDuration(lastShift.started_at, lastShift.ended_at)} on the road
           </p>
         )}
       </header>
 
-      <section className="rounded-3xl bg-slate-800 p-5">
+      <section className="rounded-3xl bg-surface-container p-5">
         <dl className="grid grid-cols-2 gap-y-3 text-lg">
-          <dt className="text-slate-400">Children carried</dt>
+          <dt className="text-on-surface-variant">Children carried</dt>
           <dd className="text-right text-3xl font-black">{totalPickups ?? 0}</dd>
-          <dt className="text-slate-400">Stops logged</dt>
+          <dt className="text-on-surface-variant">Stops logged</dt>
           <dd className="text-right text-3xl font-black">{stopCount ?? 0}</dd>
         </dl>
       </section>
 
-      <section className="rounded-3xl bg-slate-800 p-5">
-        <p className="text-xs uppercase tracking-widest text-slate-400">Sync status</p>
+      <section className="rounded-3xl bg-surface-container p-5">
+        <p className="text-xs uppercase tracking-widest text-on-surface-variant">Sync status</p>
         {pendingCount === 0 ? (
-          <p className="mt-1 text-emerald-300">All shift data synced to the depot.</p>
+          <p className="mt-1 text-primary">All shift data synced to the depot.</p>
         ) : (
           <>
-            <p className="mt-1 text-amber-200">
+            <p className="mt-1 text-amber-800">
               {pendingCount} change{pendingCount === 1 ? '' : 's'} waiting to upload.
             </p>
             <button type="button" onClick={syncNow} className="btn-primary mt-3" disabled={syncing}>

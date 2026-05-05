@@ -25,11 +25,11 @@ export function statusForScheduled(
 export function bandClass(status: OnTimeStatus): string {
   switch (status) {
     case 'late':
-      return 'bg-late/20 text-red-200';
+      return 'bg-late/15 text-red-800 border-late/30';
     case 'delayed':
-      return 'bg-delayed/20 text-amber-200';
+      return 'bg-delayed/15 text-amber-800 border-delayed/30';
     default:
-      return 'bg-ontime/20 text-emerald-200';
+      return 'bg-ontime/15 text-emerald-800 border-ontime/30';
   }
 }
 

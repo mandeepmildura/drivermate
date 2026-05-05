@@ -182,14 +182,14 @@ export default function AdminImportTurns() {
   if (loadError) {
     return (
       <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-6">
-        <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-200">{loadError}</p>
+        <p className="rounded-2xl bg-red-500/15 p-3 text-sm text-red-800">{loadError}</p>
       </main>
     );
   }
   if (!route) {
     return (
       <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-6">
-        <p className="text-slate-400">Loading route…</p>
+        <p className="text-on-surface-variant">Loading route…</p>
       </main>
     );
   }
@@ -199,22 +199,22 @@ export default function AdminImportTurns() {
       <button
         type="button"
         onClick={() => navigate(`/admin/${route.id}`)}
-        className="self-start rounded-xl bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
+        className="self-start rounded-xl bg-surface-container px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container-high"
       >
         ← Back to route editor
       </button>
 
       <header>
         <h1 className="text-2xl font-black">{route.route_number} · Import turns from Google Maps</h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-on-surface-variant">
           Inserts turn-by-turn waypoints between consecutive scheduled stops. The route must be
-          <span className="font-bold text-emerald-300"> unlocked</span> to edit; lock it again from
+          <span className="font-bold text-primary"> unlocked</span> to edit; lock it again from
           the route editor when you're done.
         </p>
       </header>
 
       {route.locked && (
-        <div className="rounded-2xl bg-amber-500/15 p-3 text-sm text-amber-200">
+        <div className="rounded-2xl bg-amber-500/15 p-3 text-sm text-amber-800">
           This route is currently <strong>locked</strong>. Open the route editor and unlock it
           before importing.{' '}
           <Link to={`/admin/${route.id}`} className="underline">
@@ -224,7 +224,7 @@ export default function AdminImportTurns() {
       )}
 
       {legs.length === 0 && (
-        <p className="rounded-2xl bg-slate-800 p-4 text-slate-300">
+        <p className="rounded-2xl bg-surface-container p-4 text-on-surface-variant">
           This route has fewer than 2 scheduled stops, so there's nothing to import between.
         </p>
       )}
@@ -235,16 +235,16 @@ export default function AdminImportTurns() {
           const state = getLeg(legKey);
           const canFetch = from.lat != null && from.lng != null && to.lat != null && to.lng != null;
           return (
-            <li key={legKey} className="rounded-2xl bg-slate-800 p-4">
+            <li key={legKey} className="rounded-2xl bg-surface-container p-4">
               <div className="flex items-baseline justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-widest text-slate-400">
+                  <p className="text-xs uppercase tracking-widest text-on-surface-variant">
                     Leg {from.sequence} → {to.sequence}
                   </p>
-                  <p className="truncate text-base font-bold text-slate-100">
+                  <p className="truncate text-base font-bold text-on-surface">
                     {from.stop_name} → {to.stop_name}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-on-surface-variant">
                     {turnsBetween.length === 0
                       ? 'No turn waypoints in between yet.'
                       : `${turnsBetween.length} turn waypoint${turnsBetween.length === 1 ? '' : 's'} already imported.`}
@@ -256,7 +256,7 @@ export default function AdminImportTurns() {
                       type="button"
                       disabled={state.deleting || route.locked}
                       onClick={() => void deleteLegTurns(legKey, from, to, turnsBetween.length)}
-                      className="rounded-xl bg-red-500/20 px-3 py-2 text-xs font-bold text-red-200 active:bg-red-500/30 disabled:opacity-40"
+                      className="rounded-xl bg-red-500/20 px-3 py-2 text-xs font-bold text-red-800 active:bg-red-500/30 disabled:opacity-40"
                       title="Delete imported turns on this leg"
                     >
                       {state.deleting ? 'Deleting…' : `Delete ${turnsBetween.length}`}
@@ -266,7 +266,7 @@ export default function AdminImportTurns() {
                     type="button"
                     disabled={state.loading || route.locked || !canFetch}
                     onClick={() => void previewLeg(legKey, from, to)}
-                    className="rounded-xl bg-blue-500 px-4 py-2 text-sm font-bold text-white active:bg-blue-400 disabled:opacity-40"
+                    className="rounded-xl bg-secondary px-4 py-2 text-sm font-bold text-white active:bg-secondary-container disabled:opacity-40"
                     title={canFetch ? '' : 'Both stops need lat/lng set'}
                   >
                     {state.loading ? 'Fetching…' : 'Preview turns'}
@@ -284,53 +284,53 @@ export default function AdminImportTurns() {
               )}
 
               {state.preview && state.preview.length === 0 && (
-                <p className="mt-3 text-xs text-slate-400">No turns returned for this leg.</p>
+                <p className="mt-3 text-xs text-on-surface-variant">No turns returned for this leg.</p>
               )}
 
               {state.preview && state.preview.length > 0 && (() => {
                 const selectedCount = state.selected.filter(Boolean).length;
                 return (
-                <div className="mt-3 rounded-xl bg-slate-900/40 p-3">
+                <div className="mt-3 rounded-xl bg-surface/40 p-3">
                   <div className="mb-2 flex items-baseline justify-between gap-2">
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-300">
+                    <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
                       {selectedCount} of {state.preview.length} turns selected
                     </p>
                     <div className="flex gap-1 text-[10px] font-bold uppercase tracking-widest">
                       <button
                         type="button"
                         onClick={() => selectAllSteps(legKey, true)}
-                        className="text-slate-400 underline-offset-2 hover:underline"
+                        className="text-on-surface-variant underline-offset-2 hover:underline"
                       >
                         all
                       </button>
-                      <span className="text-slate-600">·</span>
+                      <span className="text-on-surface-variant">·</span>
                       <button
                         type="button"
                         onClick={() => selectAllSteps(legKey, false)}
-                        className="text-slate-400 underline-offset-2 hover:underline"
+                        className="text-on-surface-variant underline-offset-2 hover:underline"
                       >
                         none
                       </button>
                     </div>
                   </div>
-                  <ol className="flex flex-col gap-1.5 text-xs text-slate-200">
+                  <ol className="flex flex-col gap-1.5 text-xs text-on-surface">
                     {state.preview.map((s, i) => {
                       const checked = state.selected[i] ?? true;
                       return (
                         <li key={i}>
-                          <label className={`flex cursor-pointer items-baseline gap-2 rounded-md px-1 py-0.5 hover:bg-slate-800/40 ${checked ? '' : 'opacity-40 line-through'}`}>
+                          <label className={`flex cursor-pointer items-baseline gap-2 rounded-md px-1 py-0.5 hover:bg-surface-container/40 ${checked ? '' : 'opacity-40 line-through'}`}>
                             <input
                               type="checkbox"
                               checked={checked}
                               onChange={() => toggleStep(legKey, i)}
-                              className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-500"
+                              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
                             />
-                            <span className="w-6 shrink-0 text-right font-mono text-slate-500">
+                            <span className="w-6 shrink-0 text-right font-mono text-on-surface-variant">
                               {i + 1}.
                             </span>
                             <span className="min-w-0 flex-1">
                               {s.instruction}
-                              <span className="ml-2 text-slate-500">
+                              <span className="ml-2 text-on-surface-variant">
                                 ({(s.distance_m / 1000).toFixed(1)} km)
                               </span>
                             </span>
@@ -344,14 +344,14 @@ export default function AdminImportTurns() {
                       type="button"
                       disabled={state.saving || route.locked || selectedCount === 0}
                       onClick={() => void commitLeg(legKey, from)}
-                      className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-slate-900 active:bg-emerald-400 disabled:opacity-40"
+                      className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-on-primary active:bg-primary-container disabled:opacity-40"
                     >
                       {state.saving ? 'Saving…' : `Insert ${selectedCount} turn${selectedCount === 1 ? '' : 's'}`}
                     </button>
                     <button
                       type="button"
                       onClick={() => setLeg(legKey, { preview: null, selected: [] })}
-                      className="rounded-xl bg-slate-700 px-4 py-2 text-sm font-bold text-slate-300 active:bg-slate-600"
+                      className="rounded-xl bg-surface-container-high px-4 py-2 text-sm font-bold text-on-surface-variant active:bg-surface-container-highest"
                     >
                       Cancel
                     </button>

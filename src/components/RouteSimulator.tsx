@@ -113,7 +113,7 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-32 right-3 z-50 rounded-full bg-purple-600 px-3 py-2 text-xs font-bold text-white shadow-lg active:bg-purple-500"
+        className="fixed bottom-32 right-3 z-50 rounded-full bg-purple-600 px-3 py-2 text-xs font-bold text-on-primary shadow-lg active:bg-purple-500"
       >
         SIM
       </button>
@@ -124,10 +124,10 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
   const label = stop ? `${stop.kind === 'stop' ? '★' : '↳'} ${stop.stop_name}` : '—';
 
   return (
-    <div className="fixed bottom-32 right-3 z-50 w-72 rounded-xl bg-slate-900/95 border border-purple-500 shadow-2xl text-white text-sm select-none">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-purple-500/40">
-        <span className="font-bold text-purple-300">🎮 Simulator</span>
-        <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-white px-2">×</button>
+    <div className="fixed bottom-32 right-3 z-50 w-72 rounded-xl bg-white/95 backdrop-blur-md border border-purple-400 shadow-2xl text-on-surface text-sm select-none">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-purple-400/40">
+        <span className="font-bold text-purple-700">🎮 Simulator</span>
+        <button onClick={() => setOpen(false)} className="text-on-surface-variant hover:text-on-surface px-2">×</button>
       </div>
 
       <div className="p-3 space-y-3">
@@ -144,11 +144,11 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
           />
         </label>
 
-        <div className="rounded-lg bg-slate-800 p-2 text-xs">
-          <div className="text-slate-400">Position {idx + 1} / {total}</div>
+        <div className="rounded-lg bg-surface-container p-2 text-xs">
+          <div className="text-on-surface-variant">Position {idx + 1} / {total}</div>
           <div className="font-semibold mt-1 text-base leading-snug">{label}</div>
           {stop?.scheduled_time && (
-            <div className="text-purple-300 mt-0.5">{stop.scheduled_time.slice(0, 5)}</div>
+            <div className="text-purple-700 mt-0.5">{stop.scheduled_time.slice(0, 5)}</div>
           )}
         </div>
 
@@ -156,38 +156,38 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
           <button
             onClick={() => { setIdx(0); setPlaying(false); }}
             disabled={!active}
-            className="rounded bg-slate-700 py-1.5 text-xs disabled:opacity-30 active:bg-slate-600"
+            className="rounded bg-surface-container-high py-1.5 text-xs disabled:opacity-30 active:bg-surface-container-highest"
           >⏮</button>
           <button
             onClick={() => setIdx((i) => Math.max(0, i - 1))}
             disabled={!active || idx === 0}
-            className="rounded bg-slate-700 py-1.5 text-xs disabled:opacity-30 active:bg-slate-600"
+            className="rounded bg-surface-container-high py-1.5 text-xs disabled:opacity-30 active:bg-surface-container-highest"
           >◀</button>
           <button
             onClick={() => setPlaying((p) => !p)}
             disabled={!active}
-            className={`rounded py-1.5 text-xs disabled:opacity-30 ${playing ? 'bg-amber-500 text-slate-900' : 'bg-emerald-500 text-slate-900'}`}
+            className={`rounded py-1.5 text-xs disabled:opacity-30 ${playing ? 'bg-amber-500 text-on-primary' : 'bg-primary text-on-primary'}`}
           >{playing ? '⏸' : '▶'}</button>
           <button
             onClick={() => setIdx((i) => Math.min(total - 1, i + 1))}
             disabled={!active || idx >= total - 1}
-            className="rounded bg-slate-700 py-1.5 text-xs disabled:opacity-30 active:bg-slate-600"
+            className="rounded bg-surface-container-high py-1.5 text-xs disabled:opacity-30 active:bg-surface-container-highest"
           >▶</button>
           <button
             onClick={() => { setIdx(total - 1); setPlaying(false); }}
             disabled={!active}
-            className="rounded bg-slate-700 py-1.5 text-xs disabled:opacity-30 active:bg-slate-600"
+            className="rounded bg-surface-container-high py-1.5 text-xs disabled:opacity-30 active:bg-surface-container-highest"
           >⏭</button>
         </div>
 
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-400">Speed</span>
+          <span className="text-on-surface-variant">Speed</span>
           <div className="flex gap-1">
             {[1, 2, 5, 10].map((s) => (
               <button
                 key={s}
                 onClick={() => setSpeed(s)}
-                className={`rounded px-2 py-1 ${speed === s ? 'bg-purple-500 text-white' : 'bg-slate-700 text-slate-300'}`}
+                className={`rounded px-2 py-1 ${speed === s ? 'bg-purple-500 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'}`}
               >
                 {s}×
               </button>
@@ -196,7 +196,7 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
         </div>
 
         <div className="flex items-center justify-between gap-2 text-xs">
-          <span className="text-slate-400">GPS gap</span>
+          <span className="text-on-surface-variant">GPS gap</span>
           <button
             onClick={() => {
               if (pausedUntil != null) setPausedUntil(null);
@@ -205,15 +205,15 @@ export function RouteSimulator({ stops, isAdmin = false }: Props) {
             disabled={!active}
             className={`rounded px-2 py-1 disabled:opacity-30 ${
               pausedUntil != null
-                ? 'bg-amber-500 text-slate-900 font-bold'
-                : 'bg-slate-700 text-slate-200 active:bg-slate-600'
+                ? 'bg-amber-500 text-on-primary font-bold'
+                : 'bg-surface-container-high text-on-surface active:bg-surface-container-highest'
             }`}
           >
             {pausedUntil != null ? `Resume GPS (${pausedRemaining}s)` : 'Drop GPS for 30s'}
           </button>
         </div>
 
-        <p className="text-[10px] text-slate-500 leading-snug">
+        <p className="text-[10px] text-on-surface-variant leading-snug">
           Active dwell: {current?.kind === 'stop' ? `${STOP_DWELL_MS / 1000}s` : `${TURN_DWELL_MS / 1000}s`} ÷ {speed}× = {Math.round(((current?.kind === 'stop' ? STOP_DWELL_MS : TURN_DWELL_MS) / speed) / 100) / 10}s. Stops need ≥8s for the app to log them.
         </p>
       </div>

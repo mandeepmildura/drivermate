@@ -355,7 +355,7 @@ export default function Run() {
 
   if (shift === undefined || shift === null) {
     return (
-      <main className="flex min-h-full items-center justify-center text-slate-400">
+      <main className="flex min-h-full items-center justify-center bg-surface text-on-surface-variant">
         Loading shift…
       </main>
     );
@@ -464,18 +464,18 @@ export default function Run() {
   // GPS status badge
   let gpsBadge: { label: string; cls: string } = {
     label: 'GPS off',
-    cls: 'bg-slate-700 text-slate-400',
+    cls: 'bg-surface-container-high text-on-surface-variant',
   };
   if (gpsEnabled) {
     if (geo.kind === 'fix') {
       gpsBadge = {
         label: distanceDisplay != null ? `GPS · ${formatDistance(distanceDisplay)}` : 'GPS ✓',
-        cls: 'bg-emerald-500/20 text-emerald-300',
+        cls: 'bg-emerald-100 text-emerald-800',
       };
     } else if (geo.kind === 'permission_denied') {
-      gpsBadge = { label: 'GPS denied', cls: 'bg-red-500/20 text-red-300' };
+      gpsBadge = { label: 'GPS denied', cls: 'bg-red-100 text-red-800' };
     } else {
-      gpsBadge = { label: 'GPS waiting…', cls: 'bg-amber-500/20 text-amber-300' };
+      gpsBadge = { label: 'GPS waiting…', cls: 'bg-amber-100 text-amber-800' };
     }
   }
 
@@ -487,24 +487,24 @@ export default function Run() {
       if (autoAdvancedStopRef.current === currentStop.id) {
         proximityBanner = {
           label: isTurn ? 'Turn passed.' : 'Stop logged ✓',
-          cls: 'bg-emerald-500/20 text-emerald-200',
+          cls: 'bg-emerald-100 text-emerald-800',
           showManual: false,
         };
       } else {
         const elapsed = arrivedSinceRef.current ? Date.now() - arrivedSinceRef.current : 0;
         const remaining = Math.max(0, Math.ceil((ARRIVAL_DWELL_MS_STOP - elapsed) / 1000));
         proximityBanner = isTurn
-          ? { label: 'At turn — advancing.', cls: 'bg-blue-500/20 text-blue-200', showManual: false }
+          ? { label: 'At turn — advancing.', cls: 'bg-secondary/10 text-secondary', showManual: false }
           : {
               label: `Arrived · auto-logging in ${remaining}s`,
-              cls: 'bg-emerald-500/20 text-emerald-200',
+              cls: 'bg-emerald-100 text-emerald-800',
               showManual: true,
             };
       }
     } else if (distanceToStop <= APPROACHING_DISTANCE_M) {
       proximityBanner = {
         label: `${isTurn ? 'Turn ahead' : 'Approaching'} · ${formatDistance(distanceToStop)}`,
-        cls: 'bg-blue-500/15 text-blue-200',
+        cls: 'bg-secondary/10 text-secondary',
         showManual: false,
       };
     }
@@ -516,18 +516,18 @@ export default function Run() {
   const turnArrow = directionFromInstruction(currentStop?.instruction_text ?? null);
 
   return (
-    <main className="flex h-full flex-col bg-slate-900 overflow-hidden">
+    <main className="flex h-full flex-col bg-surface text-on-surface overflow-hidden">
       {/* ── Status bar ─────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex items-center justify-between gap-2 bg-slate-950 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+      <div className="shrink-0 flex items-center justify-between gap-2 bg-white/90 backdrop-blur-md border-b border-outline-variant/40 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
         <div className="flex items-center gap-2">
-          <span className="font-mono normal-case tracking-normal">{formatElapsed(shift.started_at, now)}</span>
+          <span className="font-mono normal-case tracking-normal text-on-surface">{formatElapsed(shift.started_at, now)}</span>
           <span
             className={`rounded-full px-2 py-0.5 ${
               online
                 ? pending
-                  ? 'bg-amber-500/15 text-amber-300'
-                  : 'bg-emerald-500/15 text-emerald-300'
-                : 'bg-amber-500/15 text-amber-300'
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-emerald-100 text-emerald-800'
+                : 'bg-amber-100 text-amber-800'
             }`}
           >
             {online ? (pending ? `Sync: ${pending}` : 'Online') : 'Offline'}
@@ -545,7 +545,7 @@ export default function Run() {
             <button
               type="button"
               onClick={toggleMute}
-              className="rounded-full bg-slate-800 px-2 py-0.5"
+              className="rounded-full bg-surface-container px-2 py-0.5 text-on-surface-variant"
             >
               {muted ? 'Muted' : 'Audio on'}
             </button>
@@ -554,7 +554,7 @@ export default function Run() {
             type="button"
             onClick={endRun}
             disabled={ending}
-            className="rounded-full bg-slate-700 px-3 py-0.5 text-slate-200 active:bg-slate-600 disabled:opacity-50"
+            className="rounded-full bg-primary px-3 py-0.5 text-on-primary active:bg-primary-container disabled:opacity-50"
           >
             {ending ? 'Ending…' : 'End run'}
           </button>
@@ -569,7 +569,7 @@ export default function Run() {
         <button
           type="button"
           onClick={handleUnlock}
-          className="shrink-0 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-200 text-center border-b border-emerald-500/20"
+          className="shrink-0 bg-primary/10 px-4 py-2 text-sm text-primary text-center border-b border-primary/20"
         >
           Tap once to enable spoken instructions
         </button>
@@ -577,9 +577,11 @@ export default function Run() {
 
       {/* ── Next turn banner ────────────────────────────────────────────── */}
       {currentStop ? (
-        <div className={`shrink-0 flex items-center gap-3 px-4 py-3 ${bandClass(nextStopStatus)}`}>
+        <div className={`shrink-0 flex items-center gap-3 px-4 py-3 border-b ${bandClass(nextStopStatus)}`}>
           {currentStop.kind === 'turn' && (
-            <span className="text-4xl leading-none font-bold">{turnArrow}</span>
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-secondary text-3xl font-bold leading-none text-on-secondary shadow-sm">
+              {turnArrow}
+            </span>
           )}
           <div className="min-w-0 flex-1">
             <p className="text-xl font-bold leading-tight truncate">
@@ -596,8 +598,8 @@ export default function Run() {
               <span
                 className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${
                   nextStopStatus === 'late'
-                    ? 'bg-red-500/30 text-red-100'
-                    : 'bg-amber-500/30 text-amber-100'
+                    ? 'bg-late text-white'
+                    : 'bg-delayed text-white'
                 }`}
               >
                 {nextStopStatus === 'late' ? 'Late' : 'Delayed'}
@@ -612,8 +614,8 @@ export default function Run() {
               onClick={handleSkip}
               className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest active:opacity-80 ${
                 pendingSkip
-                  ? 'bg-amber-500 text-slate-900'
-                  : 'bg-slate-900/40 text-slate-200'
+                  ? 'bg-delayed text-white'
+                  : 'bg-white/70 text-on-surface-variant border border-outline-variant/40'
               }`}
             >
               {pendingSkip ? 'Tap to confirm' : 'Skip'}
@@ -621,19 +623,19 @@ export default function Run() {
           </div>
         </div>
       ) : (
-        <div className="shrink-0 px-4 py-3 text-slate-400 text-sm">
+        <div className="shrink-0 px-4 py-3 text-on-surface-variant text-sm">
           {done ? 'All stops complete — tap End run.' : 'No stops loaded for this route.'}
         </div>
       )}
 
       {/* ── Next scheduled stop strip ──────────────────────────────────── */}
       {nextScheduledStop && nextScheduledStop !== currentStop && (
-        <div className="shrink-0 flex items-center justify-between gap-3 bg-slate-800 px-4 py-2 text-xs">
+        <div className="shrink-0 flex items-center justify-between gap-3 bg-surface-container px-4 py-2 text-xs">
           <span className="min-w-0 truncate">
-            <span className="font-bold uppercase tracking-widest text-slate-400">Next stop </span>
-            <span className="font-bold text-slate-100">{nextScheduledStop.stop_name}</span>
+            <span className="font-bold uppercase tracking-widest text-on-surface-variant">Next stop </span>
+            <span className="font-bold text-on-surface">{nextScheduledStop.stop_name}</span>
             {nextScheduledStop.scheduled_time && (
-              <span className="ml-2 font-mono text-slate-400">
+              <span className="ml-2 font-mono text-on-surface-variant">
                 {nextScheduledStop.scheduled_time.slice(0, 5)}
               </span>
             )}
@@ -649,7 +651,7 @@ export default function Run() {
             <button
               type="button"
               onClick={() => logCurrentStop()}
-              className="ml-4 rounded-xl bg-emerald-500 px-3 py-1 text-xs font-bold text-slate-900 active:bg-emerald-400"
+              className="ml-4 rounded-xl bg-primary px-3 py-1 text-xs font-bold text-on-primary active:bg-primary-container"
             >
               Log now
             </button>
@@ -677,21 +679,21 @@ export default function Run() {
           arrivedStopName={arrivedStop?.name ?? null}
         />
       ) : (
-        <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-slate-900 border-t border-slate-700">
+        <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-outline-variant/40">
           <button
             type="button"
             onClick={() => setCurrentCount((c) => Math.max(0, c - 1))}
             aria-label="Remove one"
-            className="w-16 h-16 rounded-2xl bg-slate-700 text-3xl font-bold text-slate-100 active:bg-slate-600 select-none"
+            className="w-16 h-16 rounded-2xl bg-surface-container-high text-3xl font-bold text-on-surface active:bg-surface-container-highest select-none"
           >
             −
           </button>
 
           <div className="flex-1 text-center">
-            <p className="text-xs uppercase tracking-widest text-slate-400">On bus</p>
-            <p className="text-5xl font-bold tabular-nums leading-none">{displayTotal}</p>
+            <p className="text-xs uppercase tracking-widest text-on-surface-variant">On bus</p>
+            <p className="text-5xl font-bold tabular-nums leading-none text-on-surface">{displayTotal}</p>
             {currentCount > 0 && (
-              <p className="text-xs text-slate-400 mt-0.5">+{currentCount} this stop</p>
+              <p className="text-xs text-secondary mt-0.5">+{currentCount} this stop</p>
             )}
           </div>
 
@@ -699,7 +701,7 @@ export default function Run() {
             type="button"
             onClick={() => setCurrentCount((c) => c + 1)}
             aria-label="Add one"
-            className="w-20 h-20 rounded-2xl bg-blue-500 text-4xl font-bold text-white active:bg-blue-400 select-none"
+            className="w-20 h-20 rounded-2xl bg-secondary-container text-4xl font-bold text-on-secondary active:bg-secondary select-none shadow-md"
           >
             +
           </button>

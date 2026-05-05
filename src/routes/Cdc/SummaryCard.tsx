@@ -4,10 +4,10 @@ import type { LedgerSnapshot } from '../../lib/cdc/tally';
 type Stat = { label: string; value: number; tone: 'slate' | 'emerald' | 'amber' | 'sky' };
 
 const TONE_TEXT: Record<Stat['tone'], string> = {
-  slate: 'text-slate-100',
-  emerald: 'text-emerald-300',
-  amber: 'text-amber-300',
-  sky: 'text-sky-300',
+  slate: 'text-on-surface',
+  emerald: 'text-primary',
+  amber: 'text-amber-800',
+  sky: 'text-secondary',
 };
 
 type HeadCountProp = {
@@ -42,7 +42,7 @@ export function ManifestSummary({ ledger, headCount, variant = 'full' }: Manifes
         {stats.map((s) => (
           <div key={s.label} className="flex items-baseline gap-1">
             <span className={`text-base ${TONE_TEXT[s.tone]}`}>{s.value}</span>
-            <span className="text-[10px] uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
               {s.label}
             </span>
           </div>
@@ -52,15 +52,15 @@ export function ManifestSummary({ ledger, headCount, variant = 'full' }: Manifes
   }
 
   return (
-    <section className="rounded-2xl bg-slate-800 p-4">
-      <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-400">
+    <section className="rounded-2xl bg-surface-container p-4">
+      <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-on-surface-variant">
         Manifest summary
       </h2>
       <div className="grid grid-cols-4 gap-2">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-xl bg-slate-900 px-2 py-3 text-center">
+          <div key={s.label} className="rounded-xl bg-surface px-2 py-3 text-center">
             <p className={`text-3xl font-black tabular-nums ${TONE_TEXT[s.tone]}`}>{s.value}</p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
               {s.label}
             </p>
           </div>
@@ -87,15 +87,15 @@ function HeadCountEntry({ label, count, max, onSet }: HeadCountProp) {
   }
 
   return (
-    <div className="mt-3 flex flex-col gap-2 rounded-xl bg-slate-900 p-3">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
+    <div className="mt-3 flex flex-col gap-2 rounded-xl bg-surface p-3">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">{label}</p>
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={() => onSet(Math.max(0, count - 1))}
           disabled={count <= 0}
           aria-label="One fewer"
-          className="h-12 w-12 shrink-0 rounded-2xl bg-slate-700 text-2xl font-black text-slate-100 active:bg-slate-600 disabled:opacity-40"
+          className="h-12 w-12 shrink-0 rounded-2xl bg-surface-container-high text-2xl font-black text-on-surface active:bg-surface-container-highest disabled:opacity-40"
         >
           −
         </button>
@@ -110,19 +110,19 @@ function HeadCountEntry({ label, count, max, onSet }: HeadCountProp) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') commit((e.target as HTMLInputElement).value);
           }}
-          className="h-14 w-24 rounded-2xl bg-slate-800 text-center text-3xl font-black tabular-nums text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="h-14 w-24 rounded-2xl bg-surface-container text-center text-3xl font-black tabular-nums text-primary focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <button
           type="button"
           onClick={() => onSet(Math.min(max, count + 1))}
           disabled={count >= max}
           aria-label="One more"
-          className="h-12 w-12 shrink-0 rounded-2xl bg-emerald-500 text-2xl font-black text-slate-900 active:bg-emerald-400 disabled:opacity-40"
+          className="h-12 w-12 shrink-0 rounded-2xl bg-primary text-2xl font-black text-on-primary active:bg-primary-container disabled:opacity-40"
         >
           +
         </button>
       </div>
-      <p className="text-center text-[11px] text-slate-400 tabular-nums">
+      <p className="text-center text-[11px] text-on-surface-variant tabular-nums">
         of {max} booked · {Math.max(0, max - count)} no-show
         {max - count === 1 ? '' : 's'}
       </p>

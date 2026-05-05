@@ -100,9 +100,9 @@ export default function RunSheet() {
             </span>
             run
           </h1>
-          <p className="text-xs text-slate-400">{ROUTES[state.routeCode].label}</p>
+          <p className="text-xs text-on-surface-variant">{ROUTES[state.routeCode].label}</p>
         </div>
-        <Link to="/cdc/manifest" className="text-sm text-blue-400 underline-offset-4 hover:underline">
+        <Link to="/cdc/manifest" className="text-sm text-secondary underline-offset-4 hover:underline">
           ← Manifest
         </Link>
       </header>
@@ -136,12 +136,12 @@ export default function RunSheet() {
       />
 
       {state.currentStopIndex === 0 && headCountDone ? (
-        <section className="rounded-2xl bg-slate-800 p-4 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+        <section className="rounded-2xl bg-surface-container p-4 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
             Bus loaded at {STOP_NAMES[currentStop]}
           </p>
-          <p className="mt-2 text-base text-slate-300">
-            Tap <span className="font-bold text-emerald-300">Next stop →</span> when departing.
+          <p className="mt-2 text-base text-on-surface-variant">
+            Tap <span className="font-bold text-primary">Next stop →</span> when departing.
           </p>
         </section>
       ) : (
@@ -203,12 +203,12 @@ function StopCarousel({
             onClick={() => onJump(idx)}
             className={`min-w-[5.5rem] shrink-0 snap-start rounded-xl px-3 py-2 text-center text-sm font-bold ${
               isCurrent
-                ? 'bg-emerald-500 text-slate-900'
+                ? 'bg-primary text-on-primary'
                 : isPast
-                  ? 'bg-slate-700 text-slate-400 line-through'
+                  ? 'bg-surface-container-high text-on-surface-variant line-through'
                   : isSkippable
-                    ? 'bg-slate-800/50 text-slate-500'
-                    : 'bg-slate-800 text-slate-100'
+                    ? 'bg-surface-container/50 text-on-surface-variant'
+                    : 'bg-surface-container text-on-surface'
             }`}
             title={isSkippable ? 'No scheduled pickups or dropoffs — auto-skipped (tap to pull up anyway)' : undefined}
           >
@@ -260,24 +260,24 @@ function BoardingSection({
   const isFirstStop = stops[0] === currentStop;
 
   return (
-    <section className="rounded-2xl bg-slate-800 p-3">
+    <section className="rounded-2xl bg-surface-container p-3">
       <h2 className="mb-2 flex items-baseline justify-between gap-2 text-base font-bold">
         <span>Boarding at {STOP_NAMES[currentStop]}</span>
-        <span className="tabular-nums text-emerald-300">
+        <span className="tabular-nums text-primary">
           {boardedHere}/{boarding.length}
-          <span className="ml-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          <span className="ml-1 text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">
             on · booked
           </span>
         </span>
       </h2>
       {boarding.length === 0 && !isFirstStop && (
-        <p className="text-sm text-slate-400">No expected boardings here.</p>
+        <p className="text-sm text-on-surface-variant">No expected boardings here.</p>
       )}
 
       {boarding.length > 0 && (
         isFirstStop ? (
-          <details className="rounded-xl bg-slate-900 p-3">
-            <summary className="cursor-pointer text-sm font-bold text-slate-300">
+          <details className="rounded-xl bg-surface p-3">
+            <summary className="cursor-pointer text-sm font-bold text-on-surface-variant">
               Edit list (per-row tap)
             </summary>
             <div className="mt-3">{renderBoardingRows(boardingGroups, onSet)}</div>
@@ -288,18 +288,18 @@ function BoardingSection({
       )}
 
       {walkOpen ? (
-        <div className="mt-2 rounded-xl bg-slate-900 p-2">
+        <div className="mt-2 rounded-xl bg-surface p-2">
           <input
             type="text"
             placeholder="Name (optional)"
             value={walkName}
             onChange={(e) => setWalkName(e.target.value)}
-            className="mb-2 w-full rounded bg-slate-800 px-2 py-2 text-base"
+            className="mb-2 w-full rounded bg-surface-container px-2 py-2 text-base"
           />
           <select
             value={walkDest}
             onChange={(e) => setWalkDest(e.target.value as StopCode)}
-            className="mb-2 w-full rounded bg-slate-800 px-2 py-2 text-base"
+            className="mb-2 w-full rounded bg-surface-container px-2 py-2 text-base"
           >
             {stops.map((s) => (
               <option key={s} value={s}>
@@ -338,9 +338,9 @@ function renderBoardingRows(
         return (
           <div key={group.destination ?? 'all'} className="flex flex-col gap-2">
             {group.destination && (
-              <div className="flex items-baseline justify-between px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+              <div className="flex items-baseline justify-between px-1 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
                 <span>→ {STOP_NAMES[group.destination]}</span>
-                <span className="tabular-nums text-slate-300">
+                <span className="tabular-nums text-on-surface-variant">
                   {groupOn}/{group.passengers.length}
                 </span>
               </div>
@@ -356,15 +356,15 @@ function renderBoardingRows(
                       aria-pressed={isOn}
                       className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
                         isOn
-                          ? 'bg-emerald-500 text-slate-900 active:bg-emerald-400'
-                          : 'bg-slate-900 text-slate-100 active:bg-slate-800'
+                          ? 'bg-primary text-on-primary active:bg-primary-container'
+                          : 'bg-surface text-on-surface active:bg-surface-container'
                       }`}
                     >
                       <span
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-black ${
                           isOn
-                            ? 'bg-slate-900/15 text-slate-900'
-                            : 'border-2 border-slate-600 text-transparent'
+                            ? 'bg-black/15 text-on-primary'
+                            : 'border-2 border-outline-variant text-transparent'
                         }`}
                         aria-hidden
                       >
@@ -373,9 +373,9 @@ function renderBoardingRows(
                       <span className="min-w-0 flex-1">
                         <span className="font-mono font-bold">{p.seat || '—'}</span>{' '}
                         <span className="font-bold">{p.name}</span>{' '}
-                        {p.priority && <span className="text-amber-400">★</span>}
+                        {p.priority && <span className="text-amber-700">★</span>}
                       </span>
-                      <span className={`shrink-0 text-xs ${isOn ? 'text-slate-700' : 'text-slate-400'}`}>
+                      <span className={`shrink-0 text-xs ${isOn ? 'text-on-primary' : 'text-on-surface-variant'}`}>
                         → {STOP_NAMES[p.leaveStop]}
                       </span>
                     </button>
@@ -410,7 +410,7 @@ function AlightingSection({
   }
 
   return (
-    <section className="rounded-2xl bg-slate-800 p-3">
+    <section className="rounded-2xl bg-surface-container p-3">
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <h2 className="text-base font-bold">Alighting here ({alighting.length})</h2>
         {alighting.length > 1 && (
@@ -418,17 +418,17 @@ function AlightingSection({
             type="button"
             onClick={markAllOff}
             className={`min-h-touch rounded-xl px-3 py-2 text-sm font-bold ${
-              allOff ? 'bg-slate-700 text-slate-100' : 'bg-emerald-500 text-slate-900'
+              allOff ? 'bg-surface-container-high text-on-surface' : 'bg-primary text-on-primary'
             }`}
           >
             {allOff ? 'Undo all off' : `✓ Mark all off (${remainingToMark.length})`}
           </button>
         )}
       </div>
-      {alighting.length === 0 && <p className="text-sm text-slate-400">No expected alightings.</p>}
+      {alighting.length === 0 && <p className="text-sm text-on-surface-variant">No expected alightings.</p>}
       <ul className="flex flex-col gap-2">
         {alighting.map((p) => (
-          <li key={p.id} className="flex items-center justify-between rounded-xl bg-slate-900 p-2">
+          <li key={p.id} className="flex items-center justify-between rounded-xl bg-surface p-2">
             <div>
               <span className="font-mono font-bold">{p.seat || '—'}</span>{' '}
               <span>{p.name}</span>
@@ -437,7 +437,7 @@ function AlightingSection({
               type="button"
               onClick={() => onSet(p.id, { status: p.status === 'alighted' ? 'boarded' : 'alighted' })}
               className={`min-h-touch rounded-xl px-4 py-2 text-base font-bold ${
-                p.status === 'alighted' ? 'bg-emerald-500 text-slate-900' : 'bg-slate-700 text-slate-100'
+                p.status === 'alighted' ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface'
               }`}
             >
               {p.status === 'alighted' ? '✓ Off' : 'Mark off'}

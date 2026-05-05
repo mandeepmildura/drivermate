@@ -317,13 +317,13 @@ export default function ManifestUpload() {
     <main className="mx-auto flex min-h-full max-w-3xl flex-col gap-4 p-4">
       <header className="flex items-baseline justify-between">
         <h1 className="text-2xl font-black">CDC V/Line Manifest</h1>
-        <Link to="/cdc/routes" className="text-sm text-blue-400 underline-offset-4 hover:underline">
+        <Link to="/cdc/routes" className="text-sm text-secondary underline-offset-4 hover:underline">
           ← V/Line routes
         </Link>
       </header>
 
       {existing && (
-        <div className="rounded-2xl bg-amber-500/10 p-3 text-sm text-amber-200">
+        <div className="rounded-2xl bg-amber-500/10 p-3 text-sm text-amber-800">
           A trip is already in progress ({existing.routeCode}, {existing.passengers.length} pax).{' '}
           <Link to="/cdc/run" className="underline">Resume</Link> or{' '}
           <button type="button" onClick={discardExisting} className="underline">
@@ -342,7 +342,7 @@ export default function ManifestUpload() {
             className={`min-h-touch rounded-2xl px-4 py-3 text-left text-base font-bold ${
               routeCode === code
                 ? ROUTE_THEMES[code].solid
-                : 'bg-slate-800 text-slate-100 active:bg-slate-700'
+                : 'bg-surface-container text-on-surface active:bg-surface-container-high'
             }`}
           >
             <div>{code}</div>
@@ -373,16 +373,16 @@ export default function ManifestUpload() {
         </div>
       )}
 
-      <section className="rounded-2xl bg-slate-800 p-3">
+      <section className="rounded-2xl bg-surface-container p-3">
         <h2 className="mb-2 text-base font-bold">Manifest photos ({images.length}/5)</h2>
         <div className="flex flex-wrap gap-2">
           {images.map((img) => (
-            <div key={img.id} className="relative h-20 w-20 overflow-hidden rounded-lg bg-slate-900">
+            <div key={img.id} className="relative h-20 w-20 overflow-hidden rounded-lg bg-surface">
               <img src={img.previewUrl} alt="" className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={() => removeImage(img.id)}
-                className="absolute right-1 top-1 rounded-full bg-slate-900/80 px-2 text-xs"
+                className="absolute right-1 top-1 rounded-full bg-surface/80 px-2 text-xs"
                 aria-label="Remove"
               >
                 ×
@@ -390,7 +390,7 @@ export default function ManifestUpload() {
             </div>
           ))}
           {images.length < 5 && (
-            <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-slate-600 text-3xl text-slate-400">
+            <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-outline-variant text-3xl text-on-surface-variant">
               +
               <input
                 type="file"
@@ -419,11 +419,11 @@ export default function ManifestUpload() {
             🎮 Load sample manifest (admin / sim)
           </button>
         )}
-        {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
+        {error && <p className="mt-2 text-sm text-red-800">{error}</p>}
       </section>
 
       {(driver?.is_admin || isSimEnabled()) && (
-        <section className="rounded-2xl bg-slate-800 p-3">
+        <section className="rounded-2xl bg-surface-container p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="text-base font-bold">🗂 Saved snapshots</h2>
             <button
@@ -436,7 +436,7 @@ export default function ManifestUpload() {
             </button>
           </div>
           {saved.length === 0 ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-on-surface-variant">
               Save an OCR'd manifest here to replay it through the simulator later — same passengers, no re-uploading photos.
             </p>
           ) : (
@@ -444,11 +444,11 @@ export default function ManifestUpload() {
               {saved.map((s) => (
                 <li
                   key={s.id}
-                  className="flex items-center justify-between gap-2 rounded-xl bg-slate-900/40 p-2.5"
+                  className="flex items-center justify-between gap-2 rounded-xl bg-surface/40 p-2.5"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-slate-100">{s.name}</p>
-                    <p className="truncate text-[11px] text-slate-400">
+                    <p className="truncate text-sm font-bold text-on-surface">{s.name}</p>
+                    <p className="truncate text-[11px] text-on-surface-variant">
                       {s.routeCode} · {s.passengers.length} pax · {new Date(s.savedAt).toLocaleString()}
                     </p>
                   </div>
@@ -456,7 +456,7 @@ export default function ManifestUpload() {
                     <button
                       type="button"
                       onClick={() => loadSavedManifest(s)}
-                      className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-slate-900 active:bg-emerald-400"
+                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-on-primary active:bg-primary-container"
                     >
                       Load
                     </button>
@@ -464,7 +464,7 @@ export default function ManifestUpload() {
                       type="button"
                       onClick={() => removeSavedManifest(s.id)}
                       aria-label={`Delete ${s.name}`}
-                      className="rounded-lg bg-slate-700 px-2 py-1.5 text-xs font-bold text-slate-300 active:bg-slate-600"
+                      className="rounded-lg bg-surface-container-high px-2 py-1.5 text-xs font-bold text-on-surface-variant active:bg-surface-container-highest"
                     >
                       ✕
                     </button>
@@ -477,19 +477,19 @@ export default function ManifestUpload() {
       )}
 
       {passengers.length > 0 && (
-        <section className="rounded-2xl bg-slate-800 p-3">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+        <section className="rounded-2xl bg-surface-container p-3">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-on-surface-variant">
             Pickups / dropoffs by stop
           </h3>
           <ul className="grid grid-cols-2 gap-1 text-sm sm:grid-cols-3">
             {summary
               .filter((s) => s.pickups > 0 || s.dropoffs > 0)
               .map((s) => (
-                <li key={s.stop} className="rounded bg-slate-900 px-2 py-1">
+                <li key={s.stop} className="rounded bg-surface px-2 py-1">
                   <span className="font-bold">{STOP_NAMES[s.stop]}</span>
                   <div className="text-xs">
-                    <span className="text-emerald-400">+{s.pickups}</span>{' '}
-                    <span className="text-amber-400">−{s.dropoffs}</span>
+                    <span className="text-primary">+{s.pickups}</span>{' '}
+                    <span className="text-amber-700">−{s.dropoffs}</span>
                   </div>
                 </li>
               ))}
@@ -499,13 +499,13 @@ export default function ManifestUpload() {
 
       {flagged.length > 0 && boardedFirst === 0 && (
         <section className="rounded-2xl bg-amber-500/10 p-3 ring-1 ring-amber-500/30">
-          <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-amber-200">
+          <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-amber-800">
             {flagged.length} row{flagged.length === 1 ? '' : 's'} need a quick fix
           </h2>
           <ul className="flex flex-col gap-2">
             {flagged.map(({ passenger: p, reasons }) => (
-              <li key={p.id} className="rounded-xl bg-slate-900 p-3">
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-amber-300">
+              <li key={p.id} className="rounded-xl bg-surface p-3">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-amber-800">
                   {reasons.join(' · ')}
                 </p>
                 <div className="flex items-center gap-2">
@@ -516,19 +516,19 @@ export default function ManifestUpload() {
                     onChange={(e) =>
                       updatePassenger(p.id, { seat: e.target.value.toUpperCase() })
                     }
-                    className="h-9 w-20 rounded-lg bg-slate-800 px-2 text-center font-mono text-sm font-bold text-emerald-300"
+                    className="h-9 w-20 rounded-lg bg-surface-container px-2 text-center font-mono text-sm font-bold text-primary"
                   />
                   <input
                     type="text"
                     value={p.name}
                     placeholder="Name"
                     onChange={(e) => updatePassenger(p.id, { name: e.target.value })}
-                    className="h-9 flex-1 rounded-lg bg-slate-800 px-3 text-sm font-bold text-slate-100"
+                    className="h-9 flex-1 rounded-lg bg-surface-container px-3 text-sm font-bold text-on-surface"
                   />
                   <button
                     type="button"
                     onClick={() => removePassenger(p.id)}
-                    className="h-9 w-9 shrink-0 rounded-lg bg-slate-800 text-red-300 active:bg-slate-700"
+                    className="h-9 w-9 shrink-0 rounded-lg bg-surface-container text-red-800 active:bg-surface-container-high"
                     aria-label="Remove passenger"
                   >
                     ×
@@ -539,7 +539,7 @@ export default function ManifestUpload() {
                   onChange={(e) =>
                     updatePassenger(p.id, { leaveStop: e.target.value as StopCode })
                   }
-                  className="mt-2 h-9 w-full rounded-lg bg-slate-800 px-2 text-xs"
+                  className="mt-2 h-9 w-full rounded-lg bg-surface-container px-2 text-xs"
                 >
                   {stopOptions.map((s) => (
                     <option key={s} value={s}>
@@ -568,19 +568,19 @@ export default function ManifestUpload() {
         <details
           open={showAllRows}
           onToggle={(e) => setShowAllRows((e.target as HTMLDetailsElement).open)}
-          className="rounded-2xl bg-slate-800 p-3"
+          className="rounded-2xl bg-surface-container p-3"
         >
-          <summary className="cursor-pointer text-sm font-bold text-slate-300">
+          <summary className="cursor-pointer text-sm font-bold text-on-surface-variant">
             Edit all rows ({passengers.length})
           </summary>
           <div className="mt-3 flex items-baseline justify-end">
-            <button type="button" onClick={addBlankPassenger} className="text-sm text-blue-300 underline">
+            <button type="button" onClick={addBlankPassenger} className="text-sm text-secondary underline">
               + Add manually
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase text-slate-400">
+              <thead className="text-left text-xs uppercase text-on-surface-variant">
                 <tr>
                   <th className="py-1 pr-2">Seat</th>
                   <th className="py-1 pr-2">Name</th>
@@ -592,13 +592,13 @@ export default function ManifestUpload() {
               </thead>
               <tbody>
                 {passengers.map((p) => (
-                  <tr key={p.id} className="border-t border-slate-700">
+                  <tr key={p.id} className="border-t border-outline-variant">
                     <td className="py-1 pr-2">
                       <input
                         type="text"
                         value={p.seat}
                         onChange={(e) => updatePassenger(p.id, { seat: e.target.value.toUpperCase() })}
-                        className="w-14 rounded bg-slate-900 px-2 py-1"
+                        className="w-14 rounded bg-surface px-2 py-1"
                       />
                     </td>
                     <td className="py-1 pr-2">
@@ -606,14 +606,14 @@ export default function ManifestUpload() {
                         type="text"
                         value={p.name}
                         onChange={(e) => updatePassenger(p.id, { name: e.target.value })}
-                        className="w-full rounded bg-slate-900 px-2 py-1"
+                        className="w-full rounded bg-surface px-2 py-1"
                       />
                     </td>
                     <td className="py-1 pr-2">
                       <select
                         value={p.joinStop}
                         onChange={(e) => updatePassenger(p.id, { joinStop: e.target.value as StopCode })}
-                        className="rounded bg-slate-900 px-2 py-1"
+                        className="rounded bg-surface px-2 py-1"
                       >
                         {stopOptions.map((s) => (
                           <option key={s} value={s}>
@@ -626,7 +626,7 @@ export default function ManifestUpload() {
                       <select
                         value={p.leaveStop}
                         onChange={(e) => updatePassenger(p.id, { leaveStop: e.target.value as StopCode })}
-                        className="rounded bg-slate-900 px-2 py-1"
+                        className="rounded bg-surface px-2 py-1"
                       >
                         {stopOptions.map((s) => (
                           <option key={s} value={s}>
@@ -647,7 +647,7 @@ export default function ManifestUpload() {
                       <button
                         type="button"
                         onClick={() => removePassenger(p.id)}
-                        className="text-red-300"
+                        className="text-red-800"
                         aria-label="Remove passenger"
                       >
                         ×
@@ -661,12 +661,12 @@ export default function ManifestUpload() {
         </details>
       )}
 
-      <details className="rounded-2xl bg-slate-800 p-3 text-sm text-slate-300">
+      <details className="rounded-2xl bg-surface-container p-3 text-sm text-on-surface-variant">
         <summary className="cursor-pointer font-bold">Stops on this route</summary>
         <ol className="mt-2 grid grid-cols-2 gap-1">
           {stopOptions.map((s, i) => (
             <li key={s} className="text-xs">
-              <span className="text-slate-500">{i + 1}.</span> {STOP_NAMES[s]}
+              <span className="text-on-surface-variant">{i + 1}.</span> {STOP_NAMES[s]}
             </li>
           ))}
         </ol>

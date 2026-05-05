@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>DriverMate - Live Navigation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary": "#00685f",
+            "on-secondary-container": "#fefcff",
+            "on-surface-variant": "#3d4947",
+            "on-tertiary-fixed-variant": "#3f465c",
+            "on-error": "#ffffff",
+            "surface-container-low": "#f2f4f6",
+            "surface-variant": "#e0e3e5",
+            "on-surface": "#191c1e",
+            "secondary-fixed": "#dbe1ff",
+            "inverse-on-surface": "#eff1f3",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#003ea8",
+            "on-tertiary-fixed": "#131b2e",
+            "primary-fixed": "#89f5e7",
+            "on-primary-fixed": "#00201d",
+            "surface-container-lowest": "#ffffff",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "secondary": "#0051d5",
+            "tertiary-fixed": "#dae2fd",
+            "secondary-fixed-dim": "#b4c5ff",
+            "on-background": "#191c1e",
+            "on-primary-fixed-variant": "#005049",
+            "outline-variant": "#bcc9c6",
+            "on-tertiary-container": "#fefcff",
+            "on-secondary-fixed": "#00174b",
+            "tertiary-fixed-dim": "#bec6e0",
+            "on-secondary": "#ffffff",
+            "surface-container": "#eceef0",
+            "tertiary": "#545c72",
+            "error": "#ba1a1a",
+            "primary-container": "#008378",
+            "primary-fixed-dim": "#6bd8cb",
+            "surface-dim": "#d8dadc",
+            "surface": "#f7f9fb",
+            "on-primary-container": "#f4fffc",
+            "inverse-surface": "#2d3133",
+            "secondary-container": "#316bf3",
+            "outline": "#6d7a77",
+            "background": "#f7f9fb",
+            "tertiary-container": "#6c748b",
+            "inverse-primary": "#6bd8cb",
+            "surface-tint": "#006a61",
+            "surface-container-highest": "#e0e3e5",
+            "surface-container-high": "#e6e8ea",
+            "surface-bright": "#f7f9fb",
+            "on-primary": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "unit": "4px",
+            "gutter": "16px",
+            "touch-target-min": "48px",
+            "margin": "20px"
+          },
+          "fontFamily": {
+            "body-lg": ["Inter"],
+            "headline-lg": ["Manrope"],
+            "label-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "display-xl": ["Manrope"],
+            "headline-md": ["Manrope"]
+          },
+          "fontSize": {
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+            "label-sm": ["13px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "display-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+            "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}]
+          }
+        }
+      }
+    }
+  </script>
+<style>.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr
+    }
+.map-container {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuD0-x__X77uhCE_cFT_z1i2P5zYnnnTtdIHPezEwvNfO4mxXn_XTTJUVruoLcZVCcGuiZlCEdTISOVtfAdHneDnlHlS5N9iNrI-68DAOfhIHRVWfegorglwg4S645G3FP-Bf9NLBRsBpayiOuoBfaitgzSW9sBRD4W478KfqrTufkxm2OJeZwzu8sPKmZl00NMuoGAxsDF28kgh7NBNukHSTmY5t14Vt3SeYk2She-aE7GDjO1Qy6QcObaAf7c6vEL6zY-2FSQb-Irh);
+    background-size: cover;
+    background-position: center
+    }
+.glass-effect {
+    backdrop-filter: blur(20px);
+    background-color: rgba(255, 255, 255, 0.85)
+    }</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden h-screen flex flex-col">
+<!-- TopAppBar Component -->
+<header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shadow-sm docked full-width top-0 z-50 flex justify-between items-center h-14 px-5 w-full">
+<div class="flex items-center gap-4">
+<button class="hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full p-2 active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined text-teal-600 dark:text-teal-500" data-icon="menu">menu</span>
+</button>
+<h1 class="font-manrope font-extrabold text-xl text-slate-900 dark:text-white tracking-tight">DriverMate</h1>
+<div class="flex items-center gap-1.5 px-3 py-1 bg-primary-fixed/30 rounded-full border border-primary/20">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="sync" style="font-variation-settings: 'FILL' 1;">sync</span>
+<span class="text-label-sm font-label-sm text-primary uppercase">Synced</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-slate-200">
+<img alt="Driver Profile Avatar" class="w-full h-full object-cover" data-alt="A professional close-up portrait of a friendly male school bus driver in a clean blue uniform. He is smiling warmly in a bright, high-key studio environment with soft directional lighting that highlights his features. The image is crisp and modern, fitting a high-end corporate mobile application interface with a minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJIgeTyrF4jVwgF28YrbsRZH44T7vR-on8Mk4Zfnjgr9b1XZ1vNuHuAFFntvE4-EDRvD0FBJoIJuzAM9-V2ReDJCQUDT2ZZYJsFF9a-yw_Biragva2vR37Ao7xUKa1Z1IhbaiKHI7hZc8-C1qRYDXhhyOgaVmg4DJVfuPxL_dEPA2bKhQuytDENh9QdBWhyPCqddgCWPPcYdgoWUBd40UilYWbASZEDMVfdIJLcmq2QqFFmT2IvGhri-N6lfbxrrSlmMAnMMsMTWv6"/>
+</div>
+</div>
+</header>
+<!-- Main Navigation Canvas -->
+<main class="relative flex-1 w-full overflow-hidden">
+<!-- Map Background -->
+<div class="absolute inset-0 z-0 map-container" data-location="Mildura, Victoria, Australia" style="">
+<!-- Simulated Route Overlay (SVG for precision) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" viewbox="0 0 1000 1000">
+<path class="opacity-80" d="M500 800 L500 400 L800 400" fill="none" stroke="#316bf3" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"></path>
+<circle cx="500" cy="800" fill="#00685f" r="10"></circle>
+<path d="M500 800 L490 820 L510 820 Z" fill="#00685f"></path>
+</svg>
+</div>
+<!-- Floating Navigation Card -->
+<div class="absolute top-margin left-margin right-margin z-10">
+<div class="glass-effect rounded-xl border border-slate-200 shadow-lg p-5 flex items-center gap-5 max-w-lg mx-auto">
+<div class="w-20 h-20 bg-secondary flex items-center justify-center rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-white text-[48px]" data-icon="turn_right" style="font-variation-settings: 'FILL' 1;">turn_right</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-2">
+<span class="font-manrope font-extrabold text-[40px] leading-tight text-on-surface">0.4</span>
+<span class="font-manrope font-bold text-headline-md text-secondary">KM</span>
+</div>
+<p class="font-body-lg text-on-surface-variant">Turn Right on Eleventh St</p>
+</div>
+</div>
+</div>
+<!-- Right Side Map Controls -->
+<div class="absolute right-margin top-1/2 -translate-y-1/2 flex flex-col gap-unit z-10">
+<button class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md border border-slate-100 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-slate-700" data-icon="add">add</span>
+</button>
+<button class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md border border-slate-100 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-slate-700" data-icon="remove">remove</span>
+</button>
+<button class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md border border-slate-100 mt-4 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-secondary" data-icon="my_location" style="font-variation-settings: 'FILL' 1;">my_location</span>
+</button>
+</div>
+<!-- Bottom Controls & Bento Grid -->
+<div class="absolute bottom-0 left-0 right-0 p-margin flex flex-col gap-4 z-20">
+<!-- Bento Grid Stats & Boards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Passenger Boarding Card -->
+<div class="glass-effect rounded-xl border border-slate-200 p-5 flex flex-col gap-3 shadow-md">
+<div class="flex justify-between items-center border-b border-slate-100 pb-2">
+<h3 class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-widest">Boarded Here</h3>
+<span class="text-label-sm font-label-sm text-secondary">STOP: ELEVENTH ST / BENETOOK AVE</span>
+</div>
+<div class="flex items-center justify-around py-2">
+<button class="w-14 h-14 bg-surface-container-high rounded-full flex items-center justify-center active:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-on-surface text-3xl" data-icon="remove">remove</span>
+</button>
+<div class="text-center">
+<span class="font-manrope font-extrabold text-[56px] leading-none text-on-surface">04</span>
+</div>
+<button class="w-14 h-14 bg-surface-container-high rounded-full flex items-center justify-center active:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-on-surface text-3xl" data-icon="add">add</span>
+</button>
+</div>
+</div>
+<!-- Stats Card -->
+<div class="glass-effect rounded-xl border border-slate-200 p-5 grid grid-cols-2 gap-4 shadow-md">
+<div class="flex flex-col justify-center border-r border-slate-100">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase mb-1">ETA</span>
+<span class="font-manrope font-bold text-headline-md text-on-surface">08:42</span>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-teal-600 text-sm" data-icon="timer">timer</span>
+<span class="text-label-sm font-label-sm text-teal-600">REMAINING 12m</span>
+</div>
+</div>
+<div class="flex flex-col justify-center items-center">
+<span class="material-symbols-outlined text-secondary-container text-4xl mb-1" data-icon="speed">speed</span>
+<span class="font-manrope font-bold text-headline-md text-on-surface">55</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase">KM/H</span>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full h-14 bg-primary hover:bg-primary-container text-white rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-white" data-icon="assignment_turned_in" style="font-variation-settings: 'FILL' 1;">assignment_turned_in</span>
+<span class="font-manrope font-extrabold text-lg tracking-wide">STOP REACHED</span>
+</button>
+<!-- Space for BottomNavBar -->
+<div class="h-16 md:hidden"></div>
+</div>
+</main>
+<!-- BottomNavBar Component -->
+<nav class="md:hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] fixed bottom-0 left-0 right-0 h-16 z-50 flex justify-around items-center w-full max-w-screen-xl mx-auto px-2">
+<a class="flex flex-col items-center justify-center text-teal-600 dark:text-teal-400 scale-105 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="navigation" style="font-variation-settings: 'FILL' 1;">navigation</span>
+<span class="font-manrope text-[11px] font-semibold">Run</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-teal-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="route">route</span>
+<span class="font-manrope text-[11px] font-semibold">Routes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-teal-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-manrope text-[11px] font-semibold">Replay</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 hover:text-teal-500 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-manrope text-[11px] font-semibold">Account</span>
+</a>
+</nav>
+</body></html>
