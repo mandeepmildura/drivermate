@@ -518,7 +518,14 @@ export default function Run() {
   return (
     <main className="flex h-full flex-col bg-slate-900 overflow-hidden">
       {/* ── Status bar ─────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex items-center justify-between gap-2 bg-slate-950 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+      {/* paddingTop honours the iOS safe area: with viewport-fit=cover and
+          apple-mobile-web-app-status-bar-style=black-translucent (index.html)
+          the iOS clock/battery overlay the page, so without this the "End run"
+          button sits underneath the time on iPad in standalone PWA mode. */}
+      <div
+        className="shrink-0 flex items-center justify-between gap-2 bg-slate-950 px-3 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-400"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 0.375rem)' }}
+      >
         <div className="flex items-center gap-2">
           <span className="font-mono normal-case tracking-normal">{formatElapsed(shift.started_at, now)}</span>
           <span
